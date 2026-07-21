@@ -1,0 +1,11 @@
+name = "sda-cloudflare-pages"
+pages_build_output_dir = "./public"
+compatibility_date = "2026-07-21"
+
+[[kv_namespaces]]
+binding = "SDA_KV"
+id = "23e0ab577c9a45eea2e97291bf1262ed"
+
+# Optional. New records expire after this number of days.
+# [vars]
+# SDA_TTL_DAYS = "365"

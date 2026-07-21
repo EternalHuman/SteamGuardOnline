@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Open-source online Steam Desktop Authenticator для безопасного получения Steam Guard-кодов по секретному ID без логина и пароля Steam."
+    />
+    <meta name="theme-color" content="#0b1018" />
+    <title>SGO (SteamGuardOnline) — Online Steam Desktop Authenticator</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <div class="page-glow page-glow-one" aria-hidden="true"></div>
+    <div class="page-glow page-glow-two" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="header-left">
+        <a class="brand" href="/" aria-label="SGO (SteamGuardOnline) — на главную" data-i18n-attr="aria-label:brand.homeAria">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img">
+              <path d="M24 4 39 10v11c0 10.2-6.1 18.1-15 23-8.9-4.9-15-12.8-15-23V10L24 4Z" />
+              <path d="m18 24 4 4 8-9" />
+            </svg>
+          </span>
+          <span>
+            <strong>SGO</strong>
+            <small>SteamGuardOnline</small>
+          </span>
+        </a>
+      </div>
+
+      <nav class="header-actions" aria-label="Ссылки проекта" data-i18n-attr="aria-label:header.projectLinksAria">
+        <span id="service-status" class="service-status" data-kind="checking" data-i18n="service.checking">Проверка API…</span>
+        <a class="ghost-link" href="https://github.com/EternalHuman/SteamGuardOnline" target="_blank" rel="noopener noreferrer">
+          GitHub
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4h9v9M16 4 6 14" /></svg>
+        </a>
+        <div class="language-switcher">
+          <label class="sr-only" for="language-select" data-i18n="language.label">Язык</label>
+          <select id="language-select" aria-label="Язык сайта" data-i18n-attr="aria-label:language.aria">
+            <option value="en">English</option>
+            <option value="zh-CN">简体中文</option>
+            <option value="ru" selected>Русский</option>
+            <option value="es">Español</option>
+            <option value="pt-BR">Português BR</option>
+          </select>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero section-shell">
+        <div class="hero-copy">
+          <div class="eyebrow" data-i18n-html="hero.eyebrow"><span></span> Online Steam Desktop Authenticator</div>
+          <h1 data-i18n-html="hero.title">Steam Guard-коды<br /><em>на любом устройстве</em></h1>
+          <p class="hero-lead" data-i18n="hero.lead">
+            Загрузите maFile один раз, сохраните 16-символьный ID и открывайте актуальный код Steam Guard с другого
+            компьютера или телефона. Логин и пароль Steam не нужны.
+          </p>
+          <div class="hero-points" aria-label="Основные свойства" data-i18n-attr="aria-label:hero.pointsAria">
+            <span><i aria-hidden="true"></i><span class="point-text" data-i18n="hero.point.encrypt">maFile шифруется в браузере</span></span>
+            <span><i aria-hidden="true"></i><span class="point-text" data-i18n="hero.point.noUrl">Секретный код не попадает в URL</span></span>
+            <span><i aria-hidden="true"></i><span class="point-text" data-i18n="hero.point.noScripts">Без сторонних скриптов</span></span>
+          </div>
+        </div>
+
+        <div class="app-card" aria-label="SGO (SteamGuardOnline)">
+          <div class="app-card-header">
+            <div>
+              <span class="card-kicker" data-i18n="vault.kicker">Зашифрованное хранилище</span>
+              <h2 data-i18n="vault.title">Открыть или создать SGO</h2>
+            </div>
+            <span class="zero-knowledge-badge">Client-side crypto</span>
+          </div>
+
+          <div class="mode-tabs" role="tablist" aria-label="Режим работы" data-i18n-attr="aria-label:vault.modeAria">
+            <button class="mode-tab is-active" type="button" role="tab" aria-selected="true" data-mode="access">
+              <span data-i18n="vault.tab.access">Получить код</span>
+            </button>
+            <button class="mode-tab" type="button" role="tab" aria-selected="false" data-mode="import">
+              <span data-i18n="vault.tab.import">Загрузить maFile</span>
+            </button>
+          </div>
+
+          <section data-mode-panel="access" aria-label="Открытие хранилища" data-i18n-attr="aria-label:access.panelAria">
+            <form id="access-form" class="stack-form" novalidate>
+              <label class="field-label" for="access-code" data-i18n="access.label">Основной ID или пользовательский код</label>
+              <div class="input-with-action">
+                <input
+                  id="access-code"
+                  name="accessCode"
+                  type="password"
+                  inputmode="text"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  placeholder="Например: super_secret_code123"
+                  data-i18n-attr="placeholder:access.placeholder"
+                  required
+                />
+                <button id="access-visibility" class="inline-button" type="button" aria-pressed="false" data-i18n="action.show">Показать</button>
+              </div>
+              <p class="field-help" data-i18n="access.help">Код преобразуется в криптографический token локально и не отправляется на сервер в открытом виде.</p>
+              <button id="access-submit" class="primary-button" type="submit">
+                <span data-button-label data-i18n="access.submit">Открыть authenticator</span>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
+              </button>
+              <p id="access-status" class="form-status" hidden aria-live="polite"></p>
+            </form>
+          </section>
+
+          <section data-mode-panel="import" aria-label="Импорт maFile" data-i18n-attr="aria-label:import.panelAria" hidden>
+            <form id="import-form" class="stack-form" novalidate>
+              <div>
+                <span class="field-label">maFile</span>
+                <div id="file-drop" class="file-drop" role="button" tabindex="0" aria-controls="mafile-input">
+                  <input id="mafile-input" type="file" accept=".maFile,.json,application/json" hidden />
+                  <span class="upload-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 14v5h14v-5" /></svg>
+                  </span>
+                  <strong data-i18n="import.dropTitle">Перетащите maFile сюда</strong>
+                  <span data-i18n="import.dropSubtitle">или нажмите, чтобы выбрать файл</span>
+                  <small id="selected-file" data-i18n="import.noFile">Файл не выбран</small>
+                </div>
+              </div>
+
+              <div>
+                <label class="field-label" for="custom-alias" data-i18n-html="import.aliasLabelHtml">Свой код доступа <span>необязательно</span></label>
+                <input
+                  id="custom-alias"
+                  name="customAlias"
+                  type="password"
+                  autocomplete="new-password"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  placeholder="super_secret_code123"
+                  data-i18n-attr="placeholder:import.aliasPlaceholder"
+                />
+                <p id="alias-hint" class="field-help"></p>
+              </div>
+
+              <label class="check-row" for="keep-label">
+                <input id="keep-label" type="checkbox" checked />
+                <span class="custom-check" aria-hidden="true"></span>
+                <span>
+                  <strong data-i18n="import.keepLabelTitle">Сохранить имя аккаунта</strong>
+                  <small data-i18n="import.keepLabelHelp">Имя попадёт только внутрь зашифрованного контейнера.</small>
+                </span>
+              </label>
+
+              <div class="security-callout">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.2 8.7 8 11 4.8-2.3 8-6 8-11V6l-8-3Z" /><path d="M9 12l2 2 4-5" /></svg>
+                <p data-i18n-html="import.security">
+                  Из файла извлекаются только <code>shared_secret</code> и, по вашему выбору, имя аккаунта.
+                  <code>identity_secret</code>, session, revocation code и другие поля игнорируются.
+                </p>
+              </div>
+
+              <button id="import-submit" class="primary-button" type="submit">
+                <span data-button-label data-i18n="import.submit">Зашифровать и сохранить</span>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
+              </button>
+              <p id="import-status" class="form-status" hidden aria-live="polite"></p>
+            </form>
+
+            <div id="import-result" class="import-result" hidden>
+              <div class="result-heading">
+                <span class="success-mark" aria-hidden="true">✓</span>
+                <div>
+                  <strong data-i18n="result.title">Хранилище создано</strong>
+                  <small data-i18n="result.help">Сохраните основной ID в надёжном месте.</small>
+                </div>
+              </div>
+
+              <div class="secret-row">
+                <div>
+                  <span data-i18n="result.primaryLabel">Основной ID · 16 символов</span>
+                  <code id="result-primary-code"></code>
+                </div>
+                <button id="copy-primary" class="copy-button" type="button" data-i18n="action.copy">Копировать</button>
+              </div>
+
+              <div id="result-alias-row" class="secret-row" hidden>
+                <div>
+                  <span data-i18n="result.aliasLabel">Пользовательский код</span>
+                  <code id="result-alias-code"></code>
+                </div>
+                <button id="copy-alias" class="copy-button" type="button" data-i18n="action.copy">Копировать</button>
+              </div>
+
+              <p class="result-warning" data-i18n="result.warning">
+                Любой, кто узнает один из этих кодов, сможет получить Steam Guard-код. Не пересылайте их в чатах и не
+                храните в публичном репозитории.
+              </p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="auth-panel" class="auth-section section-shell" hidden aria-live="polite">
+        <div class="auth-card">
+          <div class="auth-meta">
+            <div>
+              <span class="card-kicker" data-i18n="auth.kicker">Текущий authenticator</span>
+              <h2 id="account-label">Steam Guard</h2>
+            </div>
+            <span id="access-kind-badge" class="access-kind" data-i18n="accessKind.primary">Основной ID</span>
+          </div>
+
+          <div class="code-layout">
+            <div class="code-display">
+              <span data-i18n="auth.codeLabel">Код для входа в Steam</span>
+              <strong id="guard-code" aria-label="Steam Guard код">•••••</strong>
+              <button id="copy-guard" class="copy-code-button" type="button">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6V4h9v9h-2M4 7h9v9H4z" /></svg>
+                <span data-i18n="auth.copyCode">Скопировать код</span>
+              </button>
+            </div>
+
+            <div class="countdown" aria-label="Время до следующего кода" data-i18n-attr="aria-label:auth.countdownAria">
+              <svg class="countdown-ring" viewBox="0 0 44 44" aria-hidden="true">
+                <circle class="ring-track" cx="22" cy="22" r="18" pathLength="100" />
+                <circle id="countdown-circle" class="ring-value" cx="22" cy="22" r="18" pathLength="100" />
+              </svg>
+              <div>
+                <span data-i18n="auth.countdownLabel">Обновление через</span>
+                <strong id="countdown-value">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="auth-note">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v16M2 10h16" /></svg>
+            <span data-i18n="auth.note">Код рассчитывается локально по времени вашего устройства. При неверном коде проверьте автоматическую синхронизацию часов.</span>
+          </div>
+
+          <div class="auth-actions">
+            <button id="logout-button" class="secondary-button" type="button" data-i18n="auth.logout">Закрыть локальную сессию</button>
+          </div>
+        </div>
+
+        <aside class="manage-card">
+          <div id="manage-primary">
+            <span class="card-kicker" data-i18n="manage.kicker">Управление</span>
+            <h3 data-i18n="manage.title">Альтернативный код</h3>
+            <p data-i18n="manage.description">Привяжите или замените пользовательский код. Основной 16-символьный ID останется рабочим.</p>
+
+            <form id="alias-form" class="compact-form" novalidate>
+              <label class="field-label" for="new-alias" data-i18n="manage.newAliasLabel">Новый пользовательский код</label>
+              <input
+                id="new-alias"
+                type="password"
+                autocomplete="new-password"
+                autocapitalize="off"
+                spellcheck="false"
+                placeholder="my_unique_secret_2026!"
+                data-i18n-attr="placeholder:manage.newAliasPlaceholder"
+                required
+              />
+              <button id="alias-submit" class="secondary-button full-width" type="submit" data-i18n="manage.bindAlias">Привязать код</button>
+            </form>
+
+            <p id="manage-alias-status" class="form-status" hidden aria-live="polite"></p>
+            <div class="manage-links">
+              <button id="remove-alias" class="text-button" type="button" hidden data-i18n="manage.removeAlias">Отвязать пользовательский код</button>
+              <button id="delete-vault" class="text-button danger" type="button" data-i18n="manage.deleteVault">Удалить хранилище из KV</button>
+            </div>
+          </div>
+
+          <div id="manage-alias-only" hidden>
+            <span class="card-kicker" data-i18n="manage.aliasOnlyKicker">Ограниченный доступ</span>
+            <h3 data-i18n="manage.aliasOnlyTitle">Вход по пользовательскому коду</h3>
+            <p data-i18n="manage.aliasOnlyDescription">Steam Guard-коды доступны, но для изменения alias или удаления хранилища требуется основной ID.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="benefits section-shell" aria-labelledby="benefits-title">
+        <div class="section-heading">
+          <span class="eyebrow" data-i18n-html="benefits.eyebrow"><span></span> Почему SGO (SteamGuardOnline)</span>
+          <h2 id="benefits-title" data-i18n-html="benefits.title">Прозрачная защита.<br />Контроль на вашей стороне.</h2>
+        </div>
+
+        <div class="benefit-grid">
+          <article class="benefit-card featured">
+            <span class="benefit-number">01</span>
+            <div class="benefit-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M8 9 4 12l4 3m8-6 4 3-4 3M14 5l-4 14" /></svg>
+            </div>
+            <h3 data-i18n="benefits.openTitle">Полностью open-source</h3>
+            <p data-i18n="benefits.openText">Клиентская криптография, Pages Function и схема хранения доступны для проверки и собственного deploy.</p>
+            <a href="https://github.com/EternalHuman/SteamGuardOnline" target="_blank" rel="noopener noreferrer"><span data-i18n="benefits.openLink">Открыть исходный код</span> <span>↗</span></a>
+          </article>
+
+          <article class="benefit-card">
+            <span class="benefit-number">02</span>
+            <div class="benefit-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" /><path d="M9 16h6" /></svg>
+            </div>
+            <h3 data-i18n="benefits.noLoginTitle">Без логина и пароля Steam</h3>
+            <p data-i18n-html="benefits.noLoginText">Сайт никогда не запрашивает credentials аккаунта. Для генерации кода нужен только локально извлечённый <code>shared_secret</code>.</p>
+          </article>
+
+          <article class="benefit-card">
+            <span class="benefit-number">03</span>
+            <div class="benefit-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.2 8.7 8 11 4.8-2.3 8-6 8-11V6l-8-3Z" /><path d="M8 12h8M12 8v8" /></svg>
+            </div>
+            <h3 data-i18n="benefits.encryptTitle">Шифрование до отправки</h3>
+            <p data-i18n="benefits.encryptText">Cloudflare KV получает только AES-GCM ciphertext и обёрнутый ключ. Расшифровка происходит на вашем устройстве.</p>
+          </article>
+
+          <article class="benefit-card">
+            <span class="benefit-number">04</span>
+            <div class="benefit-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4zM8 21h8M12 18v3" /><path d="M8 10h8" /></svg>
+            </div>
+            <h3 data-i18n="benefits.devicesTitle">Доступ с разных устройств</h3>
+            <p data-i18n="benefits.devicesText">Основной ID состоит ровно из 16 символов. Дополнительно можно привязать собственный код от 3 символов.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="how-it-works section-shell" aria-labelledby="flow-title">
+        <div class="flow-copy">
+          <span class="eyebrow" data-i18n-html="flow.eyebrow"><span></span> Как это работает</span>
+          <h2 id="flow-title" data-i18n-html="flow.title">Ваш maFile остаётся<br />под криптографической защитой</h2>
+          <p data-i18n="flow.text">
+            Сайт не превращает KV в склад maFiles. Он сохраняет минимальный зашифрованный контейнер, который можно
+            открыть только с помощью основного ID или привязанного пользовательского кода.
+          </p>
+        </div>
+
+        <ol class="flow-list">
+          <li>
+            <span>1</span>
+            <div><strong data-i18n="flow.step1Title">Фильтрация</strong><p data-i18n="flow.step1Text">Браузер читает JSON и оставляет только shared_secret и опциональное имя.</p></div>
+          </li>
+          <li>
+            <span>2</span>
+            <div><strong data-i18n="flow.step2Title">Шифрование</strong><p data-i18n="flow.step2Text">Данные шифруются случайным AES-256-GCM ключом до любого сетевого запроса.</p></div>
+          </li>
+          <li>
+            <span>3</span>
+            <div><strong data-i18n="flow.step3Title">Хранение</strong><p data-i18n="flow.step3Text">KV хранит ciphertext и отдельные зашифрованные обёртки ключа для ID и alias.</p></div>
+          </li>
+          <li>
+            <span>4</span>
+            <div><strong data-i18n="flow.step4Title">Генерация</strong><p data-i18n="flow.step4Text">После локальной расшифровки браузер рассчитывает пятисимвольный Steam Guard-код.</p></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="faq section-shell" aria-labelledby="faq-title">
+        <div class="section-heading compact">
+          <span class="eyebrow" data-i18n-html="faq.eyebrow"><span></span> Важно знать</span>
+          <h2 id="faq-title" data-i18n="faq.title">Безопасность и ограничения</h2>
+        </div>
+
+        <div class="faq-list">
+          <details>
+            <summary data-i18n="faq.encryptedQuestion">Можно ли загрузить зашифрованный maFile?</summary>
+            <p data-i18n-html="faq.encryptedAnswer">
+              Эта версия принимает обычный JSON maFile с полем <code>shared_secret</code>. Она не запрашивает пароль
+              шифрования SDA и тем более пароль Steam. Зашифрованный maFile нужно предварительно открыть локально.
+            </p>
+          </details>
+          <details>
+            <summary data-i18n="faq.storageQuestion">Хранится ли полный maFile в Cloudflare KV?</summary>
+            <p data-i18n="faq.storageAnswer">
+              Нет. Поля для trade confirmations, session tokens, revocation code и device data отбрасываются. Оставшиеся
+              минимальные данные зашифрованы AES-GCM ещё до отправки.
+            </p>
+          </details>
+          <details>
+            <summary data-i18n="faq.aliasQuestion">Почему лучше делать пользовательский код длинным?</summary>
+            <p data-i18n="faq.aliasAnswer">Он является bearer-секретом и ключом к расшифровке. Интерфейс разрешает коды от 3 символов, но короткий или популярный код можно подобрать.</p>
+          </details>
+          <details>
+            <summary data-i18n="faq.steamQuestion">Это заменяет официальное приложение Steam?</summary>
+            <p data-i18n="faq.steamAnswer">
+              Технически сайт генерирует коды из существующего shared_secret, но хранение второго фактора онлайн уменьшает
+              разделение факторов. Для максимальной безопасности используйте официальное мобильное приложение Steam.
+            </p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer section-shell">
+      <div>
+        <strong>SGO (SteamGuardOnline)</strong>
+        <p data-i18n="footer.disclaimer">Независимый open-source проект. Не связан с Valve Corporation или Steam.</p>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/EternalHuman/SteamGuardOnline" target="_blank" rel="noopener noreferrer" data-i18n="footer.source">Исходный код</a>
+        <span>© <span id="year"></span></span>
+      </div>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

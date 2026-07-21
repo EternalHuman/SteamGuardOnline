@@ -1,0 +1,16 @@
+{
+  "name": "sda-cloudflare-pages",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Client-side encrypted online Steam Desktop Authenticator for Cloudflare Pages and KV",
+  "scripts": {
+    "dev": "npx wrangler@latest pages dev public --kv=SDA_KV",
+    "deploy": "npx wrangler@latest pages deploy public",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
