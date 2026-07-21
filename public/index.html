@@ -31,6 +31,10 @@
             <small>SteamGuardOnline</small>
           </span>
         </a>
+        <nav class="header-page-links" aria-label="Информационные разделы" data-i18n-attr="aria-label:header.infoTabsAria">
+          <a class="header-mode-button" href="/security" data-site-tab="security" data-i18n="vault.tab.security">Безопасность</a>
+          <a class="header-mode-button" href="/api" data-site-tab="api" data-i18n="vault.tab.api">API</a>
+        </nav>
       </div>
 
       <nav class="header-actions" aria-label="Ссылки проекта" data-i18n-attr="aria-label:header.projectLinksAria">
@@ -53,7 +57,7 @@
     </header>
 
     <main>
-      <section class="hero section-shell">
+      <section class="hero section-shell" data-home-section>
         <div class="hero-copy">
           <div class="eyebrow" data-i18n-html="hero.eyebrow"><span></span> Online Steam Desktop Authenticator</div>
           <h1 data-i18n-html="hero.title">Steam Guard-коды<br /><em>на любом устройстве</em></h1>
@@ -78,15 +82,15 @@
           </div>
 
           <div class="mode-tabs" role="tablist" aria-label="Режим работы" data-i18n-attr="aria-label:vault.modeAria">
-            <button class="mode-tab is-active" type="button" role="tab" aria-selected="true" data-mode="access">
+            <button class="mode-tab is-active" type="button" role="tab" aria-selected="true" data-vault-mode="access">
               <span data-i18n="vault.tab.access">Получить код</span>
             </button>
-            <button class="mode-tab" type="button" role="tab" aria-selected="false" data-mode="import">
+            <button class="mode-tab" type="button" role="tab" aria-selected="false" data-vault-mode="import">
               <span data-i18n="vault.tab.import">Загрузить maFile</span>
             </button>
           </div>
 
-          <section data-mode-panel="access" aria-label="Открытие хранилища" data-i18n-attr="aria-label:access.panelAria">
+          <section data-vault-panel="access" aria-label="Открытие хранилища" data-i18n-attr="aria-label:access.panelAria">
             <form id="access-form" class="stack-form" novalidate>
               <label class="field-label" for="access-code" data-i18n="access.label">Основной ID или пользовательский код</label>
               <div class="input-with-action">
@@ -104,27 +108,67 @@
                 />
                 <button id="access-visibility" class="inline-button" type="button" aria-pressed="false" data-i18n="action.show">Показать</button>
               </div>
-              <p class="field-help" data-i18n="access.help">Код преобразуется в криптографический token локально и не отправляется на сервер в открытом виде.</p>
+              <p class="field-help" data-i18n="access.help">Код преобразуется в криптографический token локально. Сохранённые профили можно защитить PIN-кодом.</p>
+              <label class="check-row" for="remember-profile">
+                <input id="remember-profile" type="checkbox" checked />
+                <span class="custom-check" aria-hidden="true"></span>
+                <span>
+                  <strong data-i18n="profiles.rememberTitle">Запомнить профиль на этом устройстве</strong>
+                  <small data-i18n="profiles.rememberHelp">Ссылка на профиль сохранится в cookie без срока окончания. При включённом PIN access ID шифруется PIN-кодом.</small>
+                </span>
+              </label>
+              <label class="check-row" for="remember-pin-enabled">
+                <input id="remember-pin-enabled" type="checkbox" checked />
+                <span class="custom-check" aria-hidden="true"></span>
+                <span>
+                  <strong data-i18n="profiles.pinEnabledTitle">Защитить сохранённый профиль PIN-кодом</strong>
+                  <small data-i18n="profiles.pinEnabledHelp">Если PIN выключен, украденная cookie сможет открыть профиль без дополнительного секрета.</small>
+                </span>
+              </label>
+              <p id="remember-pin-warning" class="form-status" hidden aria-live="polite"></p>
+              <div>
+                <label class="field-label" for="remember-pin" data-i18n="profiles.pinLabel">PIN-код профиля</label>
+                <input
+                  id="remember-pin"
+                  type="password"
+                  inputmode="text"
+                  autocomplete="new-password"
+                  maxlength="6"
+                  placeholder="3–6"
+                  data-i18n-attr="placeholder:profiles.pinPlaceholder"
+                />
+                <p class="field-help" data-i18n="profiles.pinHelp">PIN необязателен, но с ним сохранённый профиль защищён от прямого использования украденной cookie. 5 неверных попыток удалят хранилище из KV.</p>
+              </div>
               <button id="access-submit" class="primary-button" type="submit">
                 <span data-button-label data-i18n="access.submit">Открыть authenticator</span>
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
               </button>
               <p id="access-status" class="form-status" hidden aria-live="polite"></p>
             </form>
+
+            <div id="saved-profiles" class="saved-profiles" hidden>
+              <div class="saved-profiles-header">
+                <strong data-i18n="profiles.title">Сохранённые профили</strong>
+                <button id="clear-profiles" class="text-button" type="button" data-i18n="profiles.clear">Очистить</button>
+              </div>
+              <div id="saved-profile-list" class="saved-profile-list"></div>
+              <p class="field-help" data-i18n="profiles.cookieHelp">С PIN cookie хранит ссылку на профиль и соль, а access ID остаётся в KV в PIN-зашифрованном виде. Без PIN cookie хранит device secret. 5 неверных PIN-попыток удалят хранилище из KV.</p>
+              <p id="saved-profile-status" class="form-status" hidden aria-live="polite"></p>
+            </div>
           </section>
 
-          <section data-mode-panel="import" aria-label="Импорт maFile" data-i18n-attr="aria-label:import.panelAria" hidden>
+          <section data-vault-panel="import" aria-label="Импорт maFile" data-i18n-attr="aria-label:import.panelAria" hidden>
             <form id="import-form" class="stack-form" novalidate>
               <div>
                 <span class="field-label">maFile</span>
                 <div id="file-drop" class="file-drop" role="button" tabindex="0" aria-controls="mafile-input">
-                  <input id="mafile-input" type="file" accept=".maFile,.json,application/json" hidden />
+                  <input id="mafile-input" type="file" accept=".maFile,.json,application/json" multiple hidden />
                   <span class="upload-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 14v5h14v-5" /></svg>
                   </span>
                   <strong data-i18n="import.dropTitle">Перетащите maFile сюда</strong>
-                  <span data-i18n="import.dropSubtitle">или нажмите, чтобы выбрать файл</span>
-                  <small id="selected-file" data-i18n="import.noFile">Файл не выбран</small>
+                  <span data-i18n="import.dropSubtitle">или нажмите, чтобы выбрать один или несколько файлов</span>
+                  <small id="selected-file" data-i18n="import.noFile">Файлы не выбраны</small>
                 </div>
               </div>
 
@@ -152,6 +196,29 @@
                 </span>
               </label>
 
+              <label class="check-row" for="remember-imported-pin-enabled">
+                <input id="remember-imported-pin-enabled" type="checkbox" checked />
+                <span class="custom-check" aria-hidden="true"></span>
+                <span>
+                  <strong data-i18n="profiles.pinEnabledTitle">Защитить сохранённый профиль PIN-кодом</strong>
+                  <small data-i18n="profiles.pinEnabledHelp">Если PIN выключен, украденная cookie сможет открыть профиль без дополнительного секрета.</small>
+                </span>
+              </label>
+              <p id="remember-imported-pin-warning" class="form-status" hidden aria-live="polite"></p>
+              <div>
+                <label class="field-label" for="remember-imported-pin" data-i18n="profiles.pinLabel">PIN-код профиля</label>
+                <input
+                  id="remember-imported-pin"
+                  type="password"
+                  inputmode="text"
+                  autocomplete="new-password"
+                  maxlength="6"
+                  placeholder="3–6"
+                  data-i18n-attr="placeholder:profiles.pinPlaceholder"
+                />
+                <p class="field-help" data-i18n="profiles.pinHelp">PIN необязателен, но с ним сохранённый профиль защищён от прямого использования украденной cookie. 5 неверных попыток удалят хранилище из KV.</p>
+              </div>
+
               <div class="security-callout">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.2 8.7 8 11 4.8-2.3 8-6 8-11V6l-8-3Z" /><path d="M9 12l2 2 4-5" /></svg>
                 <p data-i18n-html="import.security">
@@ -172,25 +239,11 @@
                 <span class="success-mark" aria-hidden="true">✓</span>
                 <div>
                   <strong data-i18n="result.title">Хранилище создано</strong>
-                  <small data-i18n="result.help">Сохраните основной ID в надёжном месте.</small>
+                  <small data-i18n="result.help">Сохраните основные ID в надёжном месте.</small>
                 </div>
               </div>
 
-              <div class="secret-row">
-                <div>
-                  <span data-i18n="result.primaryLabel">Основной ID · 16 символов</span>
-                  <code id="result-primary-code"></code>
-                </div>
-                <button id="copy-primary" class="copy-button" type="button" data-i18n="action.copy">Копировать</button>
-              </div>
-
-              <div id="result-alias-row" class="secret-row" hidden>
-                <div>
-                  <span data-i18n="result.aliasLabel">Пользовательский код</span>
-                  <code id="result-alias-code"></code>
-                </div>
-                <button id="copy-alias" class="copy-button" type="button" data-i18n="action.copy">Копировать</button>
-              </div>
+              <div id="import-result-list" class="result-list"></div>
 
               <p class="result-warning" data-i18n="result.warning">
                 Любой, кто узнает один из этих кодов, сможет получить Steam Guard-код. Не пересылайте их в чатах и не
@@ -198,7 +251,209 @@
               </p>
             </div>
           </section>
+
         </div>
+      </section>
+
+      <section id="site-info-panels" class="site-info-panels section-shell" hidden>
+        <section id="site-security-panel" class="site-tab-panel" data-site-panel="security" role="tabpanel" aria-label="Безопасность и ограничения" data-i18n-attr="aria-label:security.panelAria" hidden>
+          <div class="info-panel">
+            <div class="panel-intro">
+              <span class="card-kicker" data-i18n-html="faq.eyebrow"><span></span> Важно знать</span>
+              <h3 data-i18n="faq.title">Безопасность и ограничения</h3>
+            </div>
+
+            <div class="faq-list compact-list">
+              <details>
+                <summary data-i18n="faq.encryptedQuestion">Можно ли загрузить зашифрованный maFile?</summary>
+                <p data-i18n-html="faq.encryptedAnswer">
+                  Эта версия принимает обычный JSON maFile с полем <code>shared_secret</code>. Она не запрашивает пароль
+                  шифрования SDA и тем более пароль Steam. Зашифрованный maFile нужно предварительно открыть локально.
+                </p>
+              </details>
+              <details>
+                <summary data-i18n="faq.storageQuestion">Хранится ли полный maFile в Cloudflare KV?</summary>
+                <p data-i18n="faq.storageAnswer">
+                  Нет. Поля для trade confirmations, session tokens, revocation code и device data отбрасываются. Оставшиеся
+                  минимальные данные зашифрованы AES-GCM ещё до отправки.
+                </p>
+              </details>
+              <details>
+                <summary data-i18n="faq.aliasQuestion">Почему лучше делать пользовательский код длинным?</summary>
+                <p data-i18n="faq.aliasAnswer">Он является bearer-секретом и ключом к расшифровке. Интерфейс разрешает коды от 3 символов, но короткий или популярный код можно подобрать.</p>
+              </details>
+              <details>
+                <summary data-i18n="faq.cookieQuestion">Где хранятся сохранённые профили?</summary>
+                <p data-i18n="faq.cookieAnswer">PIN для сохранённых профилей включён по умолчанию, но его можно отключить. С PIN cookie хранит ссылку на профиль и соль, а основной ID или пользовательский код хранится в KV в PIN-зашифрованном виде. Без PIN cookie хранит device secret. 5 неверных PIN-попыток удалят хранилище из KV.</p>
+              </details>
+              <details>
+                <summary data-i18n="faq.steamQuestion">Это заменяет официальное приложение Steam?</summary>
+                <p data-i18n="faq.steamAnswer">
+                  Технически сайт генерирует коды из существующего shared_secret, но хранение второго фактора онлайн уменьшает
+                  разделение факторов. Для максимальной безопасности используйте официальное мобильное приложение Steam.
+                </p>
+              </details>
+            </div>
+          </div>
+        </section>
+
+        <section id="site-api-panel" class="site-tab-panel" data-site-panel="api" role="tabpanel" aria-label="API сайта" data-i18n-attr="aria-label:api.panelAria" hidden>
+          <div class="info-panel">
+            <div class="panel-intro">
+              <span class="card-kicker" data-i18n="api.kicker">Cloudflare Pages Function</span>
+              <h3 data-i18n="api.title">API сайта</h3>
+              <p data-i18n="api.description">Все изменяющие запросы выполняются как same-origin POST с JSON. API-вызовы отправляются без cookies; saved profiles открываются через profile id и verifier.</p>
+            </div>
+
+            <div class="api-overview-grid">
+              <div class="api-info-card">
+                <strong>Формат запросов</strong>
+                <p>Все POST endpoints принимают <code>Content-Type: application/json</code>. Клиентские запросы отправляются с <code>credentials: "omit"</code>, чтобы cookies не участвовали в API-логике.</p>
+              </div>
+              <div class="api-info-card">
+                <strong>Кэширование и Origin</strong>
+                <p>Ответы возвращаются с <code>Cache-Control: no-store</code>. Browser requests с внешним <code>Origin</code> отклоняются сервером.</p>
+              </div>
+              <div class="api-info-card">
+                <strong>Секреты</strong>
+                <p>API не принимает Steam-логин, пароль или полный maFile. В KV уходят только зашифрованный payload, lookup token и обёрнутые ключи.</p>
+              </div>
+            </div>
+
+            <div class="endpoint-list" aria-label="API endpoints" data-i18n-attr="aria-label:api.endpointsAria">
+              <div class="endpoint-row"><code>GET /api/health</code><span data-i18n="api.endpoint.health">Проверка готовности API и KV.</span></div>
+              <div class="endpoint-row"><code>POST /api/import</code><span data-i18n="api.endpoint.import">Создаёт зашифрованное хранилище и индексы доступа.</span></div>
+              <div class="endpoint-row"><code>POST /api/lookup</code><span data-i18n="api.endpoint.lookup">Возвращает encrypted payload и обёрнутый ключ по lookup token.</span></div>
+              <div class="endpoint-row"><code>POST /api/alias</code><span data-i18n="api.endpoint.alias">Привязывает, заменяет или удаляет пользовательский код.</span></div>
+              <div class="endpoint-row"><code>POST /api/delete</code><span data-i18n="api.endpoint.delete">Удаляет хранилище и связанные индексы из KV.</span></div>
+              <div class="endpoint-row"><code>POST /api/save-saved</code><span data-i18n="api.endpoint.saveSaved">Сохраняет PIN-зашифрованный access ID для профиля.</span></div>
+              <div class="endpoint-row"><code>POST /api/open-saved</code><span data-i18n="api.endpoint.openSaved">Проверяет verifier и возвращает encrypted access ID.</span></div>
+              <div class="endpoint-row"><code>POST /api/delete-saved</code><span data-i18n="api.endpoint.deleteSaved">Удаляет saved profile и связанное хранилище.</span></div>
+            </div>
+
+            <div class="api-detail-list">
+              <article class="api-detail-card">
+                <div>
+                  <code>GET /api/health</code>
+                  <p>Параметры не нужны. Используется для проверки готовности Pages Function и привязанного KV namespace.</p>
+                </div>
+                <pre><code>fetch("/api/health", {
+  headers: { accept: "application/json" },
+  cache: "no-store",
+  credentials: "omit"
+});</code></pre>
+              </article>
+
+              <article class="api-detail-card">
+                <div>
+                  <code>POST /api/import</code>
+                  <p>Создаёт vault. Тело запроса: <code>payload</code> с <code>v</code>, <code>iv</code>, <code>ciphertext</code>; <code>primary</code> с <code>token</code> и <code>wrap</code>; опциональный <code>alias</code> с таким же форматом.</p>
+                </div>
+                <pre><code>await fetch("/api/import", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  credentials: "omit",
+  body: JSON.stringify({
+    payload: { v: 1, iv: "...", ciphertext: "..." },
+    primary: { token: "...", wrap: { v: 1, iv: "...", ciphertext: "..." } },
+    alias: null
+  })
+});</code></pre>
+              </article>
+
+              <article class="api-detail-card">
+                <div>
+                  <code>POST /api/lookup</code>
+                  <p>Открывает vault по lookup token. Тело: <code>{ "token": "..." }</code>. Успешный ответ содержит <code>kind</code>, <code>payload</code>, <code>wrap</code> и признак <code>hasAlias</code>.</p>
+                </div>
+                <pre><code>const response = await fetch("/api/lookup", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  credentials: "omit",
+  body: JSON.stringify({ token: lookupToken })
+});</code></pre>
+              </article>
+
+              <article class="api-detail-card">
+                <div>
+                  <code>POST /api/alias</code>
+                  <p>Доступен только при входе по основному ID. Чтобы привязать alias, отправьте <code>primaryToken</code> и объект <code>alias</code>. Чтобы удалить alias, отправьте <code>{ "primaryToken": "...", "remove": true }</code>.</p>
+                </div>
+                <pre><code>await fetch("/api/alias", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  credentials: "omit",
+  body: JSON.stringify({
+    primaryToken: "...",
+    alias: { token: "...", wrap: { v: 1, iv: "...", ciphertext: "..." } }
+  })
+});</code></pre>
+              </article>
+
+              <article class="api-detail-card">
+                <div>
+                  <code>POST /api/delete</code>
+                  <p>Удаляет зашифрованное хранилище и связанные индексы доступа. Требует <code>primaryToken</code>; alias-token для удаления не подходит.</p>
+                </div>
+                <pre><code>await fetch("/api/delete", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  credentials: "omit",
+  body: JSON.stringify({ primaryToken: "..." })
+});</code></pre>
+              </article>
+
+              <article class="api-detail-card">
+                <div>
+                  <code>POST /api/save-saved</code>
+                  <p>Создаёт saved profile для cookies. Тело: <code>id</code>, <code>accessToken</code>, <code>verifier</code> и <code>encrypted</code> с PIN-зашифрованным access ID или device-secret вариантом.</p>
+                </div>
+                <pre><code>await fetch("/api/save-saved", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  credentials: "omit",
+  body: JSON.stringify({
+    id: "profile-id",
+    accessToken: "...",
+    verifier: "...",
+    encrypted: { v: 1, iv: "...", ciphertext: "..." }
+  })
+});</code></pre>
+              </article>
+
+              <article class="api-detail-card">
+                <div>
+                  <code>POST /api/open-saved</code>
+                  <p>Проверяет verifier saved profile. При успехе возвращает <code>encrypted</code>; при неверном PIN возвращает <code>attemptsLeft</code>. После 5 неверных попыток профиль и vault удаляются.</p>
+                </div>
+                <pre><code>const response = await fetch("/api/open-saved", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  credentials: "omit",
+  body: JSON.stringify({ id: "profile-id", verifier: "..." })
+});</code></pre>
+              </article>
+
+              <article class="api-detail-card">
+                <div>
+                  <code>POST /api/delete-saved</code>
+                  <p>Удаляет saved profile и связанное с ним хранилище. Используется при ручном удалении профиля и после удаления vault.</p>
+                </div>
+                <pre><code>await fetch("/api/delete-saved", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  credentials: "omit",
+  body: JSON.stringify({ id: "profile-id" })
+});</code></pre>
+              </article>
+            </div>
+
+            <div class="security-callout">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.2 8.7 8 11 4.8-2.3 8-6 8-11V6l-8-3Z" /><path d="M8 12h8M12 8v8" /></svg>
+              <p data-i18n="api.note">Ответы API отдаются с Cache-Control: no-store. Browser requests с чужим Origin отклоняются.</p>
+            </div>
+          </div>
+        </section>
       </section>
 
       <section id="auth-panel" class="auth-section section-shell" hidden aria-live="polite">
@@ -279,7 +534,7 @@
         </aside>
       </section>
 
-      <section class="benefits section-shell" aria-labelledby="benefits-title">
+      <section class="benefits section-shell" aria-labelledby="benefits-title" data-home-section>
         <div class="section-heading">
           <span class="eyebrow" data-i18n-html="benefits.eyebrow"><span></span> Почему SGO (SteamGuardOnline)</span>
           <h2 id="benefits-title" data-i18n-html="benefits.title">Прозрачная защита.<br />Контроль на вашей стороне.</h2>
@@ -312,6 +567,7 @@
             </div>
             <h3 data-i18n="benefits.encryptTitle">Шифрование до отправки</h3>
             <p data-i18n="benefits.encryptText">Cloudflare KV получает только AES-GCM ciphertext и обёрнутый ключ. Расшифровка происходит на вашем устройстве.</p>
+            <button id="flow-toggle" class="inline-disclosure-button" type="button" aria-expanded="false" aria-controls="flow-details-panel" data-i18n="flow.trigger">Как это работает?</button>
           </article>
 
           <article class="benefit-card">
@@ -322,73 +578,35 @@
             <h3 data-i18n="benefits.devicesTitle">Доступ с разных устройств</h3>
             <p data-i18n="benefits.devicesText">Основной ID состоит ровно из 16 символов. Дополнительно можно привязать собственный код от 3 символов.</p>
           </article>
+
+          <article class="benefit-card">
+            <span class="benefit-number">05</span>
+            <div class="benefit-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" /><path d="M9 16h.01M12 16h.01M15 16h.01" /></svg>
+            </div>
+            <h3 data-i18n="benefits.pinTitle">PIN для сохранённых профилей</h3>
+            <p data-i18n="benefits.pinText">PIN можно включить для сохранённых профилей. При 5 неверных попытках связанное хранилище удаляется из KV.</p>
+          </article>
+        </div>
+
+        <div id="flow-details-panel" class="flow-details-panel" hidden>
+          <div class="flow-details-intro">
+            <span class="card-kicker" data-i18n-html="flow.eyebrow"><span></span> Как это работает</span>
+            <h3 data-i18n-html="flow.title">Ваш maFile остаётся<br />под криптографической защитой</h3>
+            <p data-i18n="flow.text">
+              Сайт не превращает KV в склад maFiles. Он сохраняет минимальный зашифрованный контейнер, который можно
+              открыть только с помощью основного ID или привязанного пользовательского кода.
+            </p>
+          </div>
+          <ol class="flow-mini-list expanded">
+            <li><strong data-i18n="flow.step1Title">Фильтрация</strong><span data-i18n="flow.step1Text">Браузер читает JSON и оставляет только shared_secret и опциональное имя.</span></li>
+            <li><strong data-i18n="flow.step2Title">Шифрование</strong><span data-i18n="flow.step2Text">Данные шифруются случайным AES-256-GCM ключом до любого сетевого запроса.</span></li>
+            <li><strong data-i18n="flow.step3Title">Хранение</strong><span data-i18n="flow.step3Text">KV хранит ciphertext и отдельные зашифрованные обёртки ключа для ID и alias.</span></li>
+            <li><strong data-i18n="flow.step4Title">Генерация</strong><span data-i18n="flow.step4Text">После локальной расшифровки браузер рассчитывает пятисимвольный Steam Guard-код.</span></li>
+          </ol>
         </div>
       </section>
 
-      <section class="how-it-works section-shell" aria-labelledby="flow-title">
-        <div class="flow-copy">
-          <span class="eyebrow" data-i18n-html="flow.eyebrow"><span></span> Как это работает</span>
-          <h2 id="flow-title" data-i18n-html="flow.title">Ваш maFile остаётся<br />под криптографической защитой</h2>
-          <p data-i18n="flow.text">
-            Сайт не превращает KV в склад maFiles. Он сохраняет минимальный зашифрованный контейнер, который можно
-            открыть только с помощью основного ID или привязанного пользовательского кода.
-          </p>
-        </div>
-
-        <ol class="flow-list">
-          <li>
-            <span>1</span>
-            <div><strong data-i18n="flow.step1Title">Фильтрация</strong><p data-i18n="flow.step1Text">Браузер читает JSON и оставляет только shared_secret и опциональное имя.</p></div>
-          </li>
-          <li>
-            <span>2</span>
-            <div><strong data-i18n="flow.step2Title">Шифрование</strong><p data-i18n="flow.step2Text">Данные шифруются случайным AES-256-GCM ключом до любого сетевого запроса.</p></div>
-          </li>
-          <li>
-            <span>3</span>
-            <div><strong data-i18n="flow.step3Title">Хранение</strong><p data-i18n="flow.step3Text">KV хранит ciphertext и отдельные зашифрованные обёртки ключа для ID и alias.</p></div>
-          </li>
-          <li>
-            <span>4</span>
-            <div><strong data-i18n="flow.step4Title">Генерация</strong><p data-i18n="flow.step4Text">После локальной расшифровки браузер рассчитывает пятисимвольный Steam Guard-код.</p></div>
-          </li>
-        </ol>
-      </section>
-
-      <section class="faq section-shell" aria-labelledby="faq-title">
-        <div class="section-heading compact">
-          <span class="eyebrow" data-i18n-html="faq.eyebrow"><span></span> Важно знать</span>
-          <h2 id="faq-title" data-i18n="faq.title">Безопасность и ограничения</h2>
-        </div>
-
-        <div class="faq-list">
-          <details>
-            <summary data-i18n="faq.encryptedQuestion">Можно ли загрузить зашифрованный maFile?</summary>
-            <p data-i18n-html="faq.encryptedAnswer">
-              Эта версия принимает обычный JSON maFile с полем <code>shared_secret</code>. Она не запрашивает пароль
-              шифрования SDA и тем более пароль Steam. Зашифрованный maFile нужно предварительно открыть локально.
-            </p>
-          </details>
-          <details>
-            <summary data-i18n="faq.storageQuestion">Хранится ли полный maFile в Cloudflare KV?</summary>
-            <p data-i18n="faq.storageAnswer">
-              Нет. Поля для trade confirmations, session tokens, revocation code и device data отбрасываются. Оставшиеся
-              минимальные данные зашифрованы AES-GCM ещё до отправки.
-            </p>
-          </details>
-          <details>
-            <summary data-i18n="faq.aliasQuestion">Почему лучше делать пользовательский код длинным?</summary>
-            <p data-i18n="faq.aliasAnswer">Он является bearer-секретом и ключом к расшифровке. Интерфейс разрешает коды от 3 символов, но короткий или популярный код можно подобрать.</p>
-          </details>
-          <details>
-            <summary data-i18n="faq.steamQuestion">Это заменяет официальное приложение Steam?</summary>
-            <p data-i18n="faq.steamAnswer">
-              Технически сайт генерирует коды из существующего shared_secret, но хранение второго фактора онлайн уменьшает
-              разделение факторов. Для максимальной безопасности используйте официальное мобильное приложение Steam.
-            </p>
-          </details>
-        </div>
-      </section>
     </main>
 
     <footer class="site-footer section-shell">

@@ -8,8 +8,10 @@ const JSON_HEADERS = {
 };
 
 const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+const SAVED_PROFILE_ID_PATTERN = /^[A-Za-z0-9_-]{24,64}$/;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const MAX_REQUEST_BYTES = 24_000;
+const SAVED_PROFILE_MAX_PIN_ATTEMPTS = 5;
 
 class ApiError extends Error {
   constructor(status, message, headers = {}) {
@@ -32,6 +34,23 @@ function emptyResponse(status = 204, extraHeaders = {}) {
     status,
     headers: { ...JSON_HEADERS, ...extraHeaders },
   });
+}
+
+async function indexHtmlResponse(context) {
+  if (!context.env?.ASSETS || typeof context.env.ASSETS.fetch !== "function") {
+    throw new ApiError(404, "Страница не найдена.");
+  }
+
+  const url = new URL(context.request.url);
+  url.pathname = "/index.html";
+  url.search = "";
+
+  return context.env.ASSETS.fetch(
+    new Request(url.toString(), {
+      method: "GET",
+      headers: context.request.headers,
+    }),
+  );
 }
 
 function assertConfigured(env) {
@@ -78,6 +97,13 @@ function validateToken(token, fieldName = "token") {
     throw new ApiError(400, `Поле ${fieldName} имеет некорректный формат.`);
   }
   return token;
+}
+
+function validateSavedProfileId(value, fieldName = "id") {
+  if (typeof value !== "string" || !SAVED_PROFILE_ID_PATTERN.test(value)) {
+    throw new ApiError(400, `Поле ${fieldName} имеет некорректный формат.`);
+  }
+  return value;
 }
 
 function validateBase64Url(value, fieldName, minLength, maxLength) {
@@ -127,12 +153,29 @@ function validateAccessEntry(value, fieldName) {
   };
 }
 
+function validateSavedProfileEncrypted(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || value.v !== 1) {
+    throw new ApiError(400, "Некорректная структура сохранённого профиля.");
+  }
+
+  return {
+    v: 1,
+    salt: validateBase64Url(value.salt, "encrypted.salt", 22, 22),
+    iv: validateBase64Url(value.iv, "encrypted.iv", 16, 16),
+    ciphertext: validateBase64Url(value.ciphertext, "encrypted.ciphertext", 24, 160),
+  };
+}
+
 function accessKey(token) {
   return `access:${token}`;
 }
 
 function recordKey(recordId) {
   return `record:${recordId}`;
+}
+
+function savedProfileKey(profileId) {
+  return `saved-profile:${profileId}`;
 }
 
 function toBase64Url(value) {
@@ -297,6 +340,24 @@ async function requirePrimaryRecord(env, primaryToken) {
   return { token, entry, record };
 }
 
+async function deleteVaultByAccessToken(env, accessToken) {
+  const token = validateToken(accessToken, "accessToken");
+  const entry = await getJson(env.SDA_KV, accessKey(token));
+  if (!entry || entry.v !== 1) return false;
+
+  const record = await getJson(env.SDA_KV, recordKey(entry.recordId));
+  if (!record || record.v !== 1) {
+    await env.SDA_KV.delete(accessKey(token));
+    return false;
+  }
+
+  const keys = [recordKey(entry.recordId), accessKey(record.primaryToken)];
+  if (record.aliasToken) keys.push(accessKey(record.aliasToken));
+  if (!keys.includes(accessKey(token))) keys.push(accessKey(token));
+  await Promise.all(keys.map((key) => env.SDA_KV.delete(key)));
+  return true;
+}
+
 async function handleAlias(context) {
   await enforceRateLimit(context.env, context.request, "alias", 8);
   const body = await readJson(context.request);
@@ -353,20 +414,148 @@ async function handleAlias(context) {
 async function handleDelete(context) {
   await enforceRateLimit(context.env, context.request, "delete", 5);
   const body = await readJson(context.request);
-  const { token, entry, record } = await requirePrimaryRecord(context.env, body.primaryToken);
+  const { token } = await requirePrimaryRecord(context.env, body.primaryToken);
 
-  const keys = [accessKey(token), recordKey(entry.recordId)];
-  if (record.aliasToken) keys.push(accessKey(record.aliasToken));
-  await Promise.all(keys.map((key) => context.env.SDA_KV.delete(key)));
+  await deleteVaultByAccessToken(context.env, token);
 
   return jsonResponse({ ok: true, deleted: true });
 }
 
+async function handleSaveSaved(context) {
+  await enforceRateLimit(context.env, context.request, "save-saved", 12);
+  const body = await readJson(context.request);
+  const id = validateSavedProfileId(body.id);
+  const accessToken = validateToken(body.accessToken, "accessToken");
+  const verifier = validateToken(body.verifier, "verifier");
+  const encrypted = validateSavedProfileEncrypted(body.encrypted);
+  const accessEntry = await getJson(context.env.SDA_KV, accessKey(accessToken));
+
+  if (!accessEntry || accessEntry.v !== 1) {
+    throw new ApiError(404, "Хранилище не найдено. Проверьте секретный код.");
+  }
+
+  const key = savedProfileKey(id);
+  const existing = await getJson(context.env.SDA_KV, key);
+  if (existing && existing.v === 1 && existing.accessToken !== accessToken) {
+    throw new ApiError(409, "Сохранённый профиль уже существует.");
+  }
+
+  const now = new Date().toISOString();
+  await putJson(
+    context.env.SDA_KV,
+    key,
+    {
+      v: 1,
+      accessToken,
+      verifier,
+      encrypted,
+      attempts: 0,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    },
+    expirationOptions(context.env),
+  );
+
+  return jsonResponse({ ok: true, saved: true });
+}
+
+async function handleOpenSaved(context) {
+  await enforceRateLimit(context.env, context.request, "open-saved", 10);
+  const body = await readJson(context.request);
+  const id = validateSavedProfileId(body.id);
+  const verifier = validateToken(body.verifier, "verifier");
+  const key = savedProfileKey(id);
+  const profile = await getJson(context.env.SDA_KV, key);
+
+  if (!profile || profile.v !== 1) {
+    throw new ApiError(404, "Сохранённый профиль не найден.");
+  }
+
+  if (profile.verifier !== verifier) {
+    const attempts = Math.min(
+      SAVED_PROFILE_MAX_PIN_ATTEMPTS,
+      Math.max(0, Number(profile.attempts) || 0) + 1,
+    );
+
+    if (attempts >= SAVED_PROFILE_MAX_PIN_ATTEMPTS) {
+      await deleteVaultByAccessToken(context.env, profile.accessToken);
+      await context.env.SDA_KV.delete(key);
+      return jsonResponse(
+        {
+          ok: false,
+          error: "PIN введён неверно 5 раз. Хранилище удалено из KV.",
+          deleted: true,
+          attemptsLeft: 0,
+        },
+        403,
+      );
+    }
+
+    await putJson(
+      context.env.SDA_KV,
+      key,
+      { ...profile, attempts, updatedAt: new Date().toISOString() },
+      expirationOptions(context.env),
+    );
+    return jsonResponse(
+      {
+        ok: false,
+        error: "Неверный PIN.",
+        deleted: false,
+        attemptsLeft: SAVED_PROFILE_MAX_PIN_ATTEMPTS - attempts,
+      },
+      403,
+    );
+  }
+
+  const accessEntry = await getJson(context.env.SDA_KV, accessKey(profile.accessToken));
+  if (!accessEntry || accessEntry.v !== 1) {
+    await context.env.SDA_KV.delete(key);
+    throw new ApiError(404, "Хранилище не найдено. Проверьте секретный код.");
+  }
+
+  if (Number(profile.attempts) > 0) {
+    await putJson(
+      context.env.SDA_KV,
+      key,
+      { ...profile, attempts: 0, updatedAt: new Date().toISOString() },
+      expirationOptions(context.env),
+    );
+  }
+
+  return jsonResponse({
+    ok: true,
+    encrypted: validateSavedProfileEncrypted(profile.encrypted),
+    attemptsLeft: SAVED_PROFILE_MAX_PIN_ATTEMPTS,
+  });
+}
+
+async function handleDeleteSaved(context) {
+  await enforceRateLimit(context.env, context.request, "delete-saved", 5);
+  const body = await readJson(context.request);
+  const id = validateSavedProfileId(body.id);
+  const key = savedProfileKey(id);
+  const profile = await getJson(context.env.SDA_KV, key);
+  if (!profile || profile.v !== 1) {
+    return jsonResponse({ ok: true, deleted: false });
+  }
+
+  const deleted = await deleteVaultByAccessToken(context.env, profile.accessToken);
+  await context.env.SDA_KV.delete(key);
+
+  return jsonResponse({ ok: true, deleted });
+}
+
 async function routeRequest(context) {
-  assertConfigured(context.env);
   const { request } = context;
   const url = new URL(request.url);
   const route = url.pathname.replace(/^\/api\/?/, "").replace(/\/+$/, "");
+
+  if (request.method === "GET" && route === "") {
+    return indexHtmlResponse(context);
+  }
+
+  assertConfigured(context.env);
 
   if (request.method === "OPTIONS") {
     return emptyResponse(204, { allow: "GET, POST, OPTIONS" });
@@ -391,6 +580,12 @@ async function routeRequest(context) {
       return handleAlias(context);
     case "delete":
       return handleDelete(context);
+    case "save-saved":
+      return handleSaveSaved(context);
+    case "open-saved":
+      return handleOpenSaved(context);
+    case "delete-saved":
+      return handleDeleteSaved(context);
     default:
       throw new ApiError(404, "API endpoint не найден.");
   }

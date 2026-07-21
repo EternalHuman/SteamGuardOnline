@@ -53,6 +53,15 @@ function payload(character = "B") {
   };
 }
 
+function savedEncrypted(character = "I") {
+  return {
+    v: 1,
+    salt: character.repeat(22),
+    iv: character.repeat(16),
+    ciphertext: character.repeat(43),
+  };
+}
+
 async function call(kv, path, body, method = "POST") {
   const request = new Request(`https://example.com${path}`, {
     method,
@@ -116,9 +125,114 @@ test("API rejects cross-origin browser requests", async () => {
   assert.equal(response.status, 403);
 });
 
+test("API can delete a saved profile vault by saved profile id", async () => {
+  const kv = new FakeKV();
+  const primaryToken = token("D");
+  const aliasToken = token("E");
+  const profileId = "P".repeat(24);
+
+  const imported = await call(kv, "/api/import", {
+    payload: payload("F"),
+    primary: { token: primaryToken, wrap: wrap("G") },
+    alias: { token: aliasToken, wrap: wrap("H") },
+  });
+  assert.equal(imported.status, 201);
+
+  const saved = await call(kv, "/api/save-saved", {
+    id: profileId,
+    accessToken: aliasToken,
+    verifier: token("V"),
+    encrypted: savedEncrypted("I"),
+  });
+  assert.equal(saved.status, 200);
+
+  const deleted = await call(kv, "/api/delete-saved", { id: profileId });
+  assert.equal(deleted.status, 200);
+  assert.equal((await deleted.json()).deleted, true);
+
+  const primaryLookup = await call(kv, "/api/lookup", { token: primaryToken });
+  assert.equal(primaryLookup.status, 404);
+
+  const aliasLookup = await call(kv, "/api/lookup", { token: aliasToken });
+  assert.equal(aliasLookup.status, 404);
+});
+
+test("saved profile PIN failures are counted in KV and delete the vault", async () => {
+  const kv = new FakeKV();
+  const primaryToken = token("J");
+  const profileId = "Q".repeat(24);
+  const verifier = token("K");
+  const encrypted = savedEncrypted("L");
+
+  const imported = await call(kv, "/api/import", {
+    payload: payload("M"),
+    primary: { token: primaryToken, wrap: wrap("N") },
+  });
+  assert.equal(imported.status, 201);
+
+  const saved = await call(kv, "/api/save-saved", {
+    id: profileId,
+    accessToken: primaryToken,
+    verifier,
+    encrypted,
+  });
+  assert.equal(saved.status, 200);
+
+  const firstWrong = await call(kv, "/api/open-saved", { id: profileId, verifier: token("W") });
+  assert.equal(firstWrong.status, 403);
+  assert.deepEqual(await firstWrong.json(), {
+    ok: false,
+    error: "Неверный PIN.",
+    deleted: false,
+    attemptsLeft: 4,
+  });
+
+  const correct = await call(kv, "/api/open-saved", { id: profileId, verifier });
+  assert.equal(correct.status, 200);
+  assert.deepEqual((await correct.json()).encrypted, encrypted);
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const wrong = await call(kv, "/api/open-saved", { id: profileId, verifier: token(String(attempt)) });
+    assert.equal(wrong.status, 403);
+    assert.equal((await wrong.json()).deleted, false);
+  }
+
+  const deletedByLimit = await call(kv, "/api/open-saved", { id: profileId, verifier: token("X") });
+  assert.equal(deletedByLimit.status, 403);
+  const deletedBody = await deletedByLimit.json();
+  assert.equal(deletedBody.deleted, true);
+  assert.equal(deletedBody.attemptsLeft, 0);
+
+  const lookup = await call(kv, "/api/lookup", { token: primaryToken });
+  assert.equal(lookup.status, 404);
+
+  const openAfterDelete = await call(kv, "/api/open-saved", { id: profileId, verifier });
+  assert.equal(openAfterDelete.status, 404);
+});
+
 test("health endpoint reports readiness", async () => {
   const kv = new FakeKV();
   const response = await call(kv, "/api/health", null, "GET");
   assert.equal(response.status, 200);
   assert.equal((await response.json()).ok, true);
+});
+
+test("GET /api serves the API documentation page without KV", async () => {
+  const request = new Request("https://example.com/api", { method: "GET" });
+  const response = await onRequest({
+    request,
+    env: {
+      ASSETS: {
+        fetch(assetRequest) {
+          assert.equal(new URL(assetRequest.url).pathname, "/index.html");
+          return new Response("<!doctype html><title>SGO</title>", {
+            headers: { "content-type": "text/html; charset=utf-8" },
+          });
+        },
+      },
+    },
+  });
+
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /<!doctype html>/i);
 });
