@@ -90,7 +90,7 @@ const TRANSLATIONS = {
       "Загрузите maFile один раз, сохраните 16-символьный ID и открывайте актуальный код Steam Guard с другого компьютера или телефона. Логин и пароль Steam не нужны.",
     "hero.pointsAria": "Основные свойства",
     "hero.point.encrypt": "maFile шифруется в браузере",
-    "hero.point.noUrl": "Секретный код не попадает в URL",
+    "hero.point.noUrl": "Параметр id очищается из URL после чтения",
     "hero.point.noScripts": "Без сторонних скриптов",
     "vault.kicker": "Зашифрованное хранилище",
     "vault.title": "Открыть или создать SGO",
@@ -256,7 +256,7 @@ const TRANSLATIONS = {
       "Upload a maFile once, save the 16-character ID, and open the current Steam Guard code from another computer or phone. No Steam login or password is needed.",
     "hero.pointsAria": "Main features",
     "hero.point.encrypt": "maFile is encrypted in the browser",
-    "hero.point.noUrl": "The secret code never goes into the URL",
+    "hero.point.noUrl": "The id parameter is cleared from the URL after reading",
     "hero.point.noScripts": "No third-party scripts",
     "vault.kicker": "Encrypted vault",
     "vault.title": "Open or create SGO",
@@ -417,7 +417,7 @@ const TRANSLATIONS = {
     "hero.lead": "上传一次 maFile，保存 16 位 ID，就可以在另一台电脑或手机上打开当前 Steam Guard 代码。不需要 Steam 登录名或密码。",
     "hero.pointsAria": "主要特性",
     "hero.point.encrypt": "maFile 在浏览器中加密",
-    "hero.point.noUrl": "秘密代码不会进入 URL",
+    "hero.point.noUrl": "读取后会从 URL 清除 id 参数",
     "hero.point.noScripts": "无第三方脚本",
     "vault.kicker": "加密保险库",
     "vault.title": "打开或创建 SGO",
@@ -569,7 +569,7 @@ const TRANSLATIONS = {
     "hero.lead": "Sube un maFile una vez, guarda el ID de 16 caracteres y abre el código actual de Steam Guard desde otro ordenador o teléfono. No hace falta usuario ni contraseña de Steam.",
     "hero.pointsAria": "Funciones principales",
     "hero.point.encrypt": "maFile se cifra en el navegador",
-    "hero.point.noUrl": "El código secreto no entra en la URL",
+    "hero.point.noUrl": "El parámetro id se borra de la URL tras leerlo",
     "hero.point.noScripts": "Sin scripts de terceros",
     "vault.kicker": "Bóveda cifrada",
     "vault.title": "Abrir o crear SGO",
@@ -720,7 +720,7 @@ const TRANSLATIONS = {
     "hero.lead": "Envie um maFile uma vez, salve o ID de 16 caracteres e abra o código atual do Steam Guard em outro computador ou celular. Login e senha da Steam não são necessários.",
     "hero.pointsAria": "Recursos principais",
     "hero.point.encrypt": "maFile é criptografado no navegador",
-    "hero.point.noUrl": "O código secreto não entra na URL",
+    "hero.point.noUrl": "O parâmetro id é removido da URL após a leitura",
     "hero.point.noScripts": "Sem scripts de terceiros",
     "vault.kicker": "Cofre criptografado",
     "vault.title": "Abrir ou criar SGO",
@@ -1016,6 +1016,59 @@ function apiErrorMessage(path, status, serverMessage) {
 
   if (currentLanguage === DEFAULT_LANGUAGE && serverMessage) return serverMessage;
   return t("api.requestFailed");
+}
+
+function decodeQueryPart(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function splitQueryPart(part) {
+  const separator = part.indexOf("=");
+  if (separator === -1) return { key: decodeQueryPart(part), value: "" };
+  return {
+    key: decodeQueryPart(part.slice(0, separator)),
+    value: decodeQueryPart(part.slice(separator + 1)),
+  };
+}
+
+function getAccessCodeFromUrl() {
+  const query = window.location.search.slice(1);
+  if (!query) return "";
+
+  for (const part of query.split("&")) {
+    const { key, value } = splitQueryPart(part);
+    if (key === "id") return value;
+  }
+
+  return "";
+}
+
+function removeAccessCodeFromUrl() {
+  const query = window.location.search.slice(1);
+  if (!query || !window.history?.replaceState) return;
+
+  const remainingParts = query.split("&").filter((part) => splitQueryPart(part).key !== "id");
+  const nextQuery = remainingParts.length ? `?${remainingParts.join("&")}` : "";
+  window.history.replaceState(null, "", `${window.location.pathname}${nextQuery}${window.location.hash}`);
+}
+
+function submitAccessCodeFromUrl() {
+  const accessCode = getAccessCodeFromUrl();
+  if (!accessCode) return;
+
+  removeAccessCodeFromUrl();
+  setMode("access");
+  elements.accessCode.value = accessCode;
+
+  if (typeof elements.accessForm.requestSubmit === "function") {
+    elements.accessForm.requestSubmit();
+  } else {
+    elements.accessForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  }
 }
 
 function setMode(mode) {
@@ -1518,6 +1571,7 @@ setMode("access");
 setSelectedFile(null);
 applyTranslations();
 checkService();
+submitAccessCodeFromUrl();
 
 // Prevent accidental form submission when a copied primary ID is selected.
 document.addEventListener("keydown", (event) => {
