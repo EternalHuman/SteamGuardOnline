@@ -36,11 +36,13 @@ const elements = {
   accessStatus: document.querySelector("#access-status"),
   accessVisibility: document.querySelector("#access-visibility"),
   rememberProfile: document.querySelector("#remember-profile"),
-  rememberPinEnabled: document.querySelector("#remember-pin-enabled"),
-  rememberPin: document.querySelector("#remember-pin"),
-  rememberPinWarning: document.querySelector("#remember-pin-warning"),
   savedProfiles: document.querySelector("#saved-profiles"),
   savedProfileList: document.querySelector("#saved-profile-list"),
+  savedProfilePinPanel: document.querySelector("#saved-profile-pin-panel"),
+  savedProfilePinTitle: document.querySelector("#saved-profile-pin-title"),
+  savedProfilePin: document.querySelector("#saved-profile-pin"),
+  savedProfilePinSubmit: document.querySelector("#saved-profile-pin-submit"),
+  savedProfilePinCancel: document.querySelector("#saved-profile-pin-cancel"),
   savedProfileStatus: document.querySelector("#saved-profile-status"),
   clearProfiles: document.querySelector("#clear-profiles"),
   importForm: document.querySelector("#import-form"),
@@ -48,6 +50,7 @@ const elements = {
   fileDrop: document.querySelector("#file-drop"),
   selectedFile: document.querySelector("#selected-file"),
   customAlias: document.querySelector("#custom-alias"),
+  customAliasVisibility: document.querySelector("#custom-alias-visibility"),
   aliasHint: document.querySelector("#alias-hint"),
   keepLabel: document.querySelector("#keep-label"),
   rememberImportedPinEnabled: document.querySelector("#remember-imported-pin-enabled"),
@@ -134,7 +137,7 @@ const TRANSLATIONS = {
     "access.panelAria": "Открытие хранилища",
     "access.label": "Основной ID или пользовательский код",
     "access.placeholder": "Например: super_secret_code123",
-    "access.help": "Код преобразуется в криптографический token локально. Сохранённые профили можно защитить PIN-кодом.",
+    "access.help": "Код преобразуется в криптографический token локально. Если сохранённый профиль защищён PIN, сайт запросит PIN перед открытием.",
     "access.submit": "Открыть authenticator",
     "access.openSuccess": "Хранилище расшифровано локально в браузере.",
     "access.openError": "Не удалось открыть хранилище.",
@@ -145,12 +148,14 @@ const TRANSLATIONS = {
     "profiles.clear": "Очистить",
     "profiles.clearConfirm": "Удалить все сохранённые профили из cookie этого браузера?",
     "profiles.rememberTitle": "Запомнить профиль на этом устройстве",
-    "profiles.rememberHelp": "Ссылка на профиль сохранится в cookie без срока окончания. При включённом PIN access ID шифруется PIN-кодом.",
+    "profiles.rememberHelp": "Профиль сохранится в cookie этого браузера без срока окончания. PIN-защищённые профили запросят PIN при открытии.",
     "profiles.pinEnabledTitle": "Защитить сохранённый профиль PIN-кодом",
     "profiles.pinEnabledHelp": "Если PIN выключен, украденная cookie сможет открыть профиль без дополнительного секрета.",
     "profiles.pinLabel": "PIN-код профиля",
     "profiles.pinPlaceholder": "3–6",
     "profiles.pinHelp": "PIN необязателен, но с ним сохранённый профиль защищён от прямого использования украденной cookie. 5 неверных попыток удалят хранилище из KV.",
+    "profiles.pinUnlockTitle": "Введите PIN для {label}",
+    "profiles.pinUnlockHelp": "5 неверных попыток удалят связанное хранилище из KV.",
     "profiles.pinDisabledWarning": "PIN-защита выключена. Уровень безопасности ниже: при краже cookie профиль можно будет открыть без PIN.",
     "profiles.pinInvalid": "Введите PIN от 3 до 6 печатных символов.",
     "profiles.rememberImportedTitle": "Добавить созданные ID в профили",
@@ -176,6 +181,7 @@ const TRANSLATIONS = {
     "action.show": "Показать",
     "action.hide": "Скрыть",
     "action.copy": "Копировать",
+    "action.cancel": "Отмена",
     "busy.processing": "Обработка…",
     "busy.decrypting": "Расшифровка…",
     "busy.encrypting": "Шифрование…",
@@ -361,7 +367,7 @@ const TRANSLATIONS = {
     "access.panelAria": "Open vault",
     "access.label": "Primary ID or custom code",
     "access.placeholder": "Example: super_secret_code123",
-    "access.help": "The code is converted into a cryptographic token locally. Saved profiles can be protected with a PIN.",
+    "access.help": "The code is converted into a cryptographic token locally. If a saved profile is PIN-protected, the site asks for the PIN before opening it.",
     "access.submit": "Open authenticator",
     "access.openSuccess": "Vault decrypted locally in the browser.",
     "access.openError": "Could not open the vault.",
@@ -372,12 +378,14 @@ const TRANSLATIONS = {
     "profiles.clear": "Clear",
     "profiles.clearConfirm": "Delete all saved profiles from this browser cookie?",
     "profiles.rememberTitle": "Remember profile on this device",
-    "profiles.rememberHelp": "A profile reference is saved in a non-expiring cookie. When PIN is enabled, the access ID is encrypted with the PIN.",
+    "profiles.rememberHelp": "The profile is saved in this browser cookie without expiration. PIN-protected profiles ask for the PIN when opened.",
     "profiles.pinEnabledTitle": "Protect the saved profile with a PIN",
     "profiles.pinEnabledHelp": "If PIN is off, a stolen cookie can open the profile without an extra secret.",
     "profiles.pinLabel": "Profile PIN",
     "profiles.pinPlaceholder": "3-6",
     "profiles.pinHelp": "The PIN is optional, but it protects the saved profile from direct use of a stolen cookie. 5 wrong attempts delete the vault from KV.",
+    "profiles.pinUnlockTitle": "Enter PIN for {label}",
+    "profiles.pinUnlockHelp": "5 wrong attempts delete the linked vault from KV.",
     "profiles.pinDisabledWarning": "PIN protection is off. Security is lower: if the cookie is stolen, the profile can be opened without a PIN.",
     "profiles.pinInvalid": "Enter a PIN from 3 to 6 printable characters.",
     "profiles.rememberImportedTitle": "Add created IDs to profiles",
@@ -403,6 +411,7 @@ const TRANSLATIONS = {
     "action.show": "Show",
     "action.hide": "Hide",
     "action.copy": "Copy",
+    "action.cancel": "Cancel",
     "busy.processing": "Processing…",
     "busy.decrypting": "Decrypting…",
     "busy.encrypting": "Encrypting…",
@@ -583,7 +592,7 @@ const TRANSLATIONS = {
     "access.panelAria": "打开保险库",
     "access.label": "主 ID 或自定义代码",
     "access.placeholder": "例如：super_secret_code123",
-    "access.help": "代码会在本地转换为加密 token。保存的配置可以用 PIN 保护。",
+    "access.help": "代码会在本地转换为加密 token。如果保存的配置受 PIN 保护，网站会在打开前要求输入 PIN。",
     "access.submit": "打开 authenticator",
     "access.openSuccess": "保险库已在浏览器本地解密。",
     "access.openError": "无法打开保险库。",
@@ -594,12 +603,14 @@ const TRANSLATIONS = {
     "profiles.clear": "清空",
     "profiles.clearConfirm": "从此浏览器 cookie 中删除所有已保存配置？",
     "profiles.rememberTitle": "在此设备记住配置",
-    "profiles.rememberHelp": "资料引用会保存在无过期时间的 cookie 中。启用 PIN 时，access ID 会使用 PIN 加密。",
+    "profiles.rememberHelp": "配置会保存在此浏览器的无过期 cookie 中。受 PIN 保护的配置在打开时会要求输入 PIN。",
     "profiles.pinEnabledTitle": "用 PIN 保护保存的配置",
     "profiles.pinEnabledHelp": "如果关闭 PIN，cookie 被盗后可在没有额外 secret 的情况下打开配置。",
     "profiles.pinLabel": "配置 PIN",
     "profiles.pinPlaceholder": "3–6",
     "profiles.pinHelp": "PIN 是可选的，但可防止被盗 cookie 被直接使用。5 次错误尝试会从 KV 删除保险库。",
+    "profiles.pinUnlockTitle": "输入 {label} 的 PIN",
+    "profiles.pinUnlockHelp": "5 次错误尝试会从 KV 删除关联保险库。",
     "profiles.pinDisabledWarning": "PIN 保护已关闭。安全级别降低：cookie 被盗后，配置可在没有 PIN 的情况下打开。",
     "profiles.pinInvalid": "请输入 3 到 6 个可打印字符的 PIN。",
     "profiles.rememberImportedTitle": "将创建的 ID 添加到配置",
@@ -625,6 +636,7 @@ const TRANSLATIONS = {
     "action.show": "显示",
     "action.hide": "隐藏",
     "action.copy": "复制",
+    "action.cancel": "取消",
     "busy.processing": "处理中…",
     "busy.decrypting": "解密中…",
     "busy.encrypting": "加密中…",
@@ -795,7 +807,7 @@ const TRANSLATIONS = {
     "access.panelAria": "Abrir bóveda",
     "access.label": "ID principal o código personalizado",
     "access.placeholder": "Ejemplo: super_secret_code123",
-    "access.help": "El código se convierte localmente en un token criptográfico. Los perfiles guardados pueden protegerse con PIN.",
+    "access.help": "El código se convierte localmente en un token criptográfico. Si un perfil guardado está protegido con PIN, el sitio pedirá el PIN antes de abrirlo.",
     "access.submit": "Abrir authenticator",
     "access.openSuccess": "Bóveda descifrada localmente en el navegador.",
     "access.openError": "No se pudo abrir la bóveda.",
@@ -806,12 +818,14 @@ const TRANSLATIONS = {
     "profiles.clear": "Limpiar",
     "profiles.clearConfirm": "¿Eliminar todos los perfiles guardados de la cookie de este navegador?",
     "profiles.rememberTitle": "Recordar perfil en este dispositivo",
-    "profiles.rememberHelp": "Una referencia del perfil se guarda en una cookie sin caducidad. Si el PIN está activado, el access ID se cifra con el PIN.",
+    "profiles.rememberHelp": "El perfil se guarda en la cookie de este navegador sin caducidad. Los perfiles protegidos con PIN pedirán el PIN al abrirse.",
     "profiles.pinEnabledTitle": "Proteger el perfil guardado con PIN",
     "profiles.pinEnabledHelp": "Si el PIN está desactivado, una cookie robada puede abrir el perfil sin un secreto adicional.",
     "profiles.pinLabel": "PIN del perfil",
     "profiles.pinPlaceholder": "3-6",
     "profiles.pinHelp": "El PIN es opcional, pero protege el perfil guardado contra el uso directo de una cookie robada. 5 intentos erróneos eliminan la bóveda de KV.",
+    "profiles.pinUnlockTitle": "Introduce el PIN para {label}",
+    "profiles.pinUnlockHelp": "5 intentos erróneos eliminan la bóveda vinculada de KV.",
     "profiles.pinDisabledWarning": "La protección con PIN está desactivada. La seguridad baja: si roban la cookie, el perfil podrá abrirse sin PIN.",
     "profiles.pinInvalid": "Introduce un PIN de 3 a 6 caracteres imprimibles.",
     "profiles.rememberImportedTitle": "Añadir los ID creados a perfiles",
@@ -837,6 +851,7 @@ const TRANSLATIONS = {
     "action.show": "Mostrar",
     "action.hide": "Ocultar",
     "action.copy": "Copiar",
+    "action.cancel": "Cancelar",
     "busy.processing": "Procesando…",
     "busy.decrypting": "Descifrando…",
     "busy.encrypting": "Cifrando…",
@@ -1006,7 +1021,7 @@ const TRANSLATIONS = {
     "access.panelAria": "Abrir cofre",
     "access.label": "ID principal ou código personalizado",
     "access.placeholder": "Exemplo: super_secret_code123",
-    "access.help": "O código é convertido localmente em um token criptográfico. Perfis salvos podem ser protegidos com PIN.",
+    "access.help": "O código é convertido localmente em um token criptográfico. Se um perfil salvo estiver protegido por PIN, o site pedirá o PIN antes de abrir.",
     "access.submit": "Abrir authenticator",
     "access.openSuccess": "Cofre descriptografado localmente no navegador.",
     "access.openError": "Não foi possível abrir o cofre.",
@@ -1017,12 +1032,14 @@ const TRANSLATIONS = {
     "profiles.clear": "Limpar",
     "profiles.clearConfirm": "Excluir todos os perfis salvos do cookie deste navegador?",
     "profiles.rememberTitle": "Lembrar perfil neste dispositivo",
-    "profiles.rememberHelp": "Uma referência do perfil fica salva em um cookie sem expiração. Com PIN ativado, o access ID é criptografado com o PIN.",
+    "profiles.rememberHelp": "O perfil fica salvo no cookie deste navegador sem expiração. Perfis protegidos por PIN pedirão o PIN ao abrir.",
     "profiles.pinEnabledTitle": "Proteger o perfil salvo com PIN",
     "profiles.pinEnabledHelp": "Se o PIN ficar desativado, um cookie roubado poderá abrir o perfil sem um segredo adicional.",
     "profiles.pinLabel": "PIN do perfil",
     "profiles.pinPlaceholder": "3-6",
     "profiles.pinHelp": "O PIN é opcional, mas protege o perfil salvo contra o uso direto de um cookie roubado. 5 tentativas erradas excluem o cofre do KV.",
+    "profiles.pinUnlockTitle": "Digite o PIN para {label}",
+    "profiles.pinUnlockHelp": "5 tentativas erradas excluem o cofre vinculado do KV.",
     "profiles.pinDisabledWarning": "A proteção por PIN está desativada. A segurança fica menor: se o cookie for roubado, o perfil poderá ser aberto sem PIN.",
     "profiles.pinInvalid": "Digite um PIN de 3 a 6 caracteres imprimíveis.",
     "profiles.rememberImportedTitle": "Adicionar IDs criados aos perfis",
@@ -1048,6 +1065,7 @@ const TRANSLATIONS = {
     "action.show": "Mostrar",
     "action.hide": "Ocultar",
     "action.copy": "Copiar",
+    "action.cancel": "Cancelar",
     "busy.processing": "Processando…",
     "busy.decrypting": "Descriptografando…",
     "busy.encrypting": "Criptografando…",
@@ -1210,6 +1228,7 @@ const state = {
   serviceKind: "checking",
   toastTimer: null,
   savedProfiles: [],
+  pendingSavedProfilePinIndex: null,
   currentInfoPage: null,
 };
 
@@ -1326,9 +1345,8 @@ function applyTranslations() {
   updateRememberPinState();
   updateAliasHint();
   setAccessKindBadge(state.accessKind || "primary");
-
-  const hidden = elements.accessCode.type === "password";
-  elements.accessVisibility.textContent = t(hidden ? "action.show" : "action.hide");
+  syncVisibilityToggle(elements.accessCode, elements.accessVisibility);
+  syncVisibilityToggle(elements.customAlias, elements.customAliasVisibility);
 
   for (const button of document.querySelectorAll("[aria-busy='true'][data-busy-key]")) {
     setElementText(button, t(button.dataset.busyKey));
@@ -1645,9 +1663,58 @@ function maskAccessCode(profile) {
   return profile?.m ? `••••${profile.m}` : "••••";
 }
 
+function hideSavedProfilePinPanel() {
+  state.pendingSavedProfilePinIndex = null;
+  elements.savedProfilePinPanel.hidden = true;
+  elements.savedProfilePin.value = "";
+}
+
+function updateSavedProfilePinPanel({ focus = false, clearValue = false } = {}) {
+  const index = state.pendingSavedProfilePinIndex;
+  if (!Number.isInteger(index)) {
+    elements.savedProfilePinPanel.hidden = true;
+    return;
+  }
+
+  const profile = state.savedProfiles[index];
+  if (!profile || profile.p === 0) {
+    hideSavedProfilePinPanel();
+    return;
+  }
+
+  const label = `${profile.l} · ${maskAccessCode(profile)}`;
+  elements.savedProfilePinTitle.textContent = t("profiles.pinUnlockTitle", { label });
+  if (clearValue) elements.savedProfilePin.value = "";
+  elements.savedProfilePinPanel.hidden = false;
+  if (focus) elements.savedProfilePin.focus();
+}
+
+function showSavedProfilePinPanel(index, { clearStatus = true } = {}) {
+  state.pendingSavedProfilePinIndex = index;
+  if (clearStatus) setStatus(elements.savedProfileStatus);
+  updateSavedProfilePinPanel({ focus: true, clearValue: true });
+}
+
+async function submitSavedProfilePin() {
+  const index = state.pendingSavedProfilePinIndex;
+  if (!Number.isInteger(index)) return;
+
+  setBusy(elements.savedProfilePinSubmit, true, "busy.decrypting");
+  try {
+    await openSavedProfile(index, elements.savedProfilePin.value);
+  } finally {
+    setBusy(elements.savedProfilePinSubmit, false);
+  }
+}
+
 function renderSavedProfiles() {
   elements.savedProfileList.textContent = "";
   elements.savedProfiles.hidden = state.savedProfiles.length === 0;
+
+  if (!state.savedProfiles.length) {
+    hideSavedProfilePinPanel();
+    return;
+  }
 
   for (const [index, profile] of state.savedProfiles.entries()) {
     const row = document.createElement("div");
@@ -1669,17 +1736,7 @@ function renderSavedProfiles() {
     const actions = document.createElement("div");
     actions.className = "saved-profile-actions";
 
-    if (profile.p !== 0) {
-      const pinInput = document.createElement("input");
-      pinInput.className = "profile-pin-input";
-      pinInput.type = "password";
-      pinInput.inputMode = "text";
-      pinInput.autocomplete = "off";
-      pinInput.maxLength = 6;
-      pinInput.placeholder = t("profiles.pinPlaceholder");
-      pinInput.dataset.profilePinIndex = String(index);
-      actions.append(pinInput);
-    } else {
+    if (profile.p === 0) {
       const noPinLabel = document.createElement("span");
       noPinLabel.className = "profile-no-pin-label";
       noPinLabel.textContent = t("profiles.noPinShort");
@@ -1704,6 +1761,8 @@ function renderSavedProfiles() {
     row.append(details, actions);
     elements.savedProfileList.append(row);
   }
+
+  updateSavedProfilePinPanel();
 }
 
 function handleSavedProfilePinFailure(index, error) {
@@ -1714,6 +1773,7 @@ function handleSavedProfilePinFailure(index, error) {
     if (error.data?.deleted) {
       state.savedProfiles = writeSavedProfilesToCookie(state.savedProfiles.filter((item) => item.id !== profile.id));
       renderSavedProfiles();
+      hideSavedProfilePinPanel();
       setStatus(elements.savedProfileStatus, t("profiles.deletedAfterAttempts"), "error");
       return;
     }
@@ -1727,6 +1787,7 @@ function handleSavedProfilePinFailure(index, error) {
     };
     state.savedProfiles = writeSavedProfilesToCookie(nextProfiles);
     renderSavedProfiles();
+    showSavedProfilePinPanel(index, { clearStatus: false });
     setStatus(
       elements.savedProfileStatus,
       t("profiles.pinWrongWithAttempts", { count: attemptsLeft }),
@@ -1738,6 +1799,7 @@ function handleSavedProfilePinFailure(index, error) {
   if (error instanceof ApiRequestError && error.status === 404) {
     state.savedProfiles = writeSavedProfilesToCookie(state.savedProfiles.filter((item) => item.id !== profile.id));
     renderSavedProfiles();
+    hideSavedProfilePinPanel();
   }
 
   setStatus(elements.savedProfileStatus, error?.message || t("profiles.pinWrong"), "error");
@@ -1773,8 +1835,8 @@ async function openSavedProfile(index, pin) {
 
     setVaultMode("access");
     elements.rememberProfile.checked = false;
-    elements.rememberPin.value = "";
     updateRememberPinState();
+    hideSavedProfilePinPanel();
     elements.accessCode.value = accessCode;
     state.pendingSavedProfileId = profile.id;
     if (typeof elements.accessForm.requestSubmit === "function") {
@@ -1936,19 +1998,29 @@ function setStatus(element, message = "", kind = "neutral") {
   element.hidden = !message;
 }
 
+function syncVisibilityToggle(input, button) {
+  if (!input || !button) return;
+
+  const hidden = input.type === "password";
+  const labelKey = hidden ? "action.show" : "action.hide";
+  button.setAttribute("aria-pressed", String(!hidden));
+  button.setAttribute("aria-label", t(labelKey));
+  button.setAttribute("title", t(labelKey));
+  button.disabled = input.disabled;
+
+  const showIcon = button.querySelector('[data-visibility-icon="show"]');
+  const hideIcon = button.querySelector('[data-visibility-icon="hide"]');
+  if (showIcon) showIcon.hidden = !hidden;
+  if (hideIcon) hideIcon.hidden = hidden;
+}
+
+function togglePasswordVisibility(input, button) {
+  if (!input || !button || input.disabled) return;
+  input.type = input.type === "password" ? "text" : "password";
+  syncVisibilityToggle(input, button);
+}
+
 function updateRememberPinState() {
-  const rememberEnabled = elements.rememberProfile.checked;
-  const accessPinEnabled = rememberEnabled && elements.rememberPinEnabled.checked;
-  elements.rememberPinEnabled.disabled = !rememberEnabled;
-  elements.rememberPin.disabled = !accessPinEnabled;
-  if (!accessPinEnabled) elements.rememberPin.value = "";
-
-  setStatus(
-    elements.rememberPinWarning,
-    rememberEnabled && !elements.rememberPinEnabled.checked ? t("profiles.pinDisabledWarning") : "",
-    "warning",
-  );
-
   const importPinEnabled = elements.rememberImportedPinEnabled.checked;
   elements.rememberImportedPin.disabled = !importPinEnabled;
   if (!importPinEnabled) elements.rememberImportedPin.value = "";
@@ -2046,12 +2118,15 @@ function validateNewAlias(value) {
 function updateAliasHint() {
   if (state.selectedFiles.length > 1) {
     elements.customAlias.disabled = true;
+    elements.customAlias.type = "password";
+    syncVisibilityToggle(elements.customAlias, elements.customAliasVisibility);
     elements.aliasHint.textContent = t("alias.hint.multi");
     elements.aliasHint.dataset.kind = "neutral";
     return;
   }
 
   elements.customAlias.disabled = false;
+  syncVisibilityToggle(elements.customAlias, elements.customAliasVisibility);
   const value = normalizeAccessCode(elements.customAlias.value);
   if (!value) {
     elements.aliasHint.textContent = t("alias.hint.empty", { min: ALIAS_MIN_LENGTH, max: ALIAS_MAX_LENGTH });
@@ -2345,19 +2420,6 @@ async function handleAccessSubmit(event) {
   const accessCode = validation.value;
   const savedProfileId = state.pendingSavedProfileId;
   state.pendingSavedProfileId = null;
-  let profilePin = null;
-  const useProfilePin = elements.rememberProfile.checked && elements.rememberPinEnabled.checked;
-  if (elements.rememberProfile.checked) {
-    if (useProfilePin) {
-      const pinValidation = validateProfilePin(elements.rememberPin.value);
-      if (!pinValidation.ok) {
-        setStatus(elements.accessStatus, pinValidation.message, "error");
-        elements.rememberPin.focus();
-        return;
-      }
-      profilePin = pinValidation.value;
-    }
-  }
 
   setBusy(elements.accessSubmit, true, "busy.decrypting");
   let prepared;
@@ -2374,8 +2436,7 @@ async function handleAccessSubmit(event) {
         {
           code: accessCode,
           token: prepared.token,
-          pin: profilePin,
-          usePin: useProfilePin,
+          usePin: false,
           label: payload.label || "Steam Guard",
           kind: response.kind,
         },
@@ -2608,8 +2669,6 @@ elements.accessForm.addEventListener("submit", handleAccessSubmit);
 elements.importForm.addEventListener("submit", handleImportSubmit);
 elements.aliasForm.addEventListener("submit", handleAliasSubmit);
 elements.customAlias.addEventListener("input", updateAliasHint);
-elements.rememberProfile.addEventListener("change", updateRememberPinState);
-elements.rememberPinEnabled.addEventListener("change", updateRememberPinState);
 elements.rememberImportedPinEnabled.addEventListener("change", updateRememberPinState);
 elements.savedProfileList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-profile-action]");
@@ -2619,26 +2678,37 @@ elements.savedProfileList.addEventListener("click", (event) => {
   if (!Number.isInteger(index)) return;
 
   if (button.dataset.profileAction === "open") {
-    const pinInput = elements.savedProfileList.querySelector(`[data-profile-pin-index="${index}"]`);
-    openSavedProfile(index, pinInput?.value || "");
+    const profile = state.savedProfiles[index];
+    if (!profile) return;
+    if (profile.p !== 0) {
+      showSavedProfilePinPanel(index);
+      return;
+    }
+    hideSavedProfilePinPanel();
+    openSavedProfile(index, "");
     return;
   }
 
   const profile = state.savedProfiles[index];
   if (!profile) return;
+  hideSavedProfilePinPanel();
   removeSavedProfile(profile.id);
   showToast(t("profiles.removed"));
 });
-elements.savedProfileList.addEventListener("keydown", (event) => {
+elements.savedProfilePin.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
-  const input = event.target.closest("[data-profile-pin-index]");
-  if (!input) return;
   event.preventDefault();
-  openSavedProfile(Number(input.dataset.profilePinIndex), input.value);
+  submitSavedProfilePin();
+});
+elements.savedProfilePinSubmit.addEventListener("click", submitSavedProfilePin);
+elements.savedProfilePinCancel.addEventListener("click", () => {
+  hideSavedProfilePinPanel();
+  setStatus(elements.savedProfileStatus);
 });
 elements.clearProfiles.addEventListener("click", () => {
   if (!window.confirm(t("profiles.clearConfirm"))) return;
   clearSavedProfiles();
+  hideSavedProfilePinPanel();
   showToast(t("profiles.cleared"));
 });
 elements.maFileInput.addEventListener("change", () => setSelectedFiles(elements.maFileInput.files || []));
@@ -2667,12 +2737,12 @@ elements.fileDrop.addEventListener("drop", (event) => {
   if (files.length) setSelectedFiles(files);
 });
 
-elements.accessVisibility.addEventListener("click", () => {
-  const hidden = elements.accessCode.type === "password";
-  elements.accessCode.type = hidden ? "text" : "password";
-  elements.accessVisibility.setAttribute("aria-pressed", String(hidden));
-  elements.accessVisibility.textContent = t(hidden ? "action.hide" : "action.show");
-});
+elements.accessVisibility.addEventListener("click", () =>
+  togglePasswordVisibility(elements.accessCode, elements.accessVisibility),
+);
+elements.customAliasVisibility.addEventListener("click", () =>
+  togglePasswordVisibility(elements.customAlias, elements.customAliasVisibility),
+);
 
 elements.importResultList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-copy-value]");
