@@ -83,11 +83,12 @@ const elements = {
 
 const DEFAULT_LANGUAGE = "ru";
 const LANGUAGE_STORAGE_KEY = "sda-vault-language";
+const PROFILE_STORAGE_KEY = "sgo_saved_profiles_v1";
 const PROFILE_COOKIE_NAME = "sgo_saved_profiles_v1";
 const PROFILE_COOKIE_EXPIRES = "Fri, 31 Dec 9999 23:59:59 GMT";
 const PROFILE_COOKIE_MAX_BYTES = 3500;
 const IMPORT_FILE_LIMIT = 50;
-const SAVED_PROFILE_LIMIT = 32;
+const SAVED_PROFILE_LIMIT = 50;
 const SAVED_PROFILE_MAX_PIN_ATTEMPTS = 5;
 const SAVED_PROFILE_ID_BYTES = 18;
 const SAVED_PROFILE_DEVICE_SECRET_BYTES = 32;
@@ -104,7 +105,6 @@ const LANGUAGE_META = {
   "pt-BR": { htmlLang: "pt-BR" },
 };
 const INFO_PAGE_BY_PATH = new Map([
-  ["/security", "security"],
   ["/api", "api"],
 ]);
 
@@ -148,21 +148,21 @@ const TRANSLATIONS = {
     "profiles.open": "Открыть",
     "profiles.remove": "Удалить",
     "profiles.clear": "Очистить",
-    "profiles.clearConfirm": "Удалить все сохранённые профили из cookie этого браузера?",
+    "profiles.clearConfirm": "Удалить все сохранённые профили из хранилища этого браузера?",
     "profiles.rememberTitle": "Запомнить профиль на этом устройстве",
-    "profiles.rememberHelp": "Профиль сохранится в cookie этого браузера без срока окончания. PIN-защищённые профили запросят PIN при открытии.",
+    "profiles.rememberHelp": "Профиль сохранится в хранилище этого браузера без срока окончания. PIN-защищённые профили запросят PIN при открытии.",
     "profiles.pinEnabledTitle": "Защитить сохранённый профиль PIN-кодом",
-    "profiles.pinEnabledHelp": "Если PIN выключен, украденная cookie сможет открыть профиль без дополнительного секрета.",
+    "profiles.pinEnabledHelp": "Если PIN выключен, доступ к хранилищу браузера сможет открыть профиль без дополнительного секрета.",
     "profiles.pinLabel": "PIN-код профиля",
     "profiles.pinPlaceholder": "3–6",
-    "profiles.pinHelp": "PIN необязателен, но с ним сохранённый профиль защищён от прямого использования украденной cookie. 5 неверных попыток удалят хранилище из KV.",
+    "profiles.pinHelp": "PIN необязателен, но с ним сохранённый профиль защищён от прямого использования данных браузерного хранилища. 5 неверных попыток удалят хранилище из KV.",
     "profiles.pinUnlockTitle": "Введите PIN для {label}",
     "profiles.pinUnlockHelp": "5 неверных попыток удалят связанное хранилище из KV.",
-    "profiles.pinDisabledWarning": "PIN-защита выключена. Уровень безопасности ниже: при краже cookie профиль можно будет открыть без PIN.",
+    "profiles.pinDisabledWarning": "PIN-защита выключена. Уровень безопасности ниже: при доступе к хранилищу браузера профиль можно будет открыть без PIN.",
     "profiles.pinInvalid": "Введите PIN от 3 до 6 печатных символов.",
     "profiles.rememberImportedTitle": "Добавить созданные ID в профили",
     "profiles.rememberImportedHelp": "После импорта они появятся во вкладке получения кода.",
-    "profiles.cookieHelp": "С PIN cookie хранит ссылку на профиль и соль, а access ID остаётся в KV в PIN-зашифрованном виде. Без PIN cookie хранит device secret. 5 неверных PIN-попыток удалят хранилище из KV.",
+    "profiles.cookieHelp": "С PIN браузер хранит ссылку на профиль и соль, а access ID остаётся в KV в PIN-зашифрованном виде. Без PIN браузер хранит device secret. 5 неверных PIN-попыток удалят хранилище из KV.",
     "profiles.kind.primary": "Основной ID",
     "profiles.kind.alias": "Пользовательский код",
     "profiles.pinProtected": "PIN",
@@ -176,7 +176,7 @@ const TRANSLATIONS = {
     "profiles.attemptsLeft": "осталось {count}",
     "profiles.pinWrong": "Неверный PIN.",
     "profiles.pinWrongWithAttempts": "Неверный PIN. Осталось попыток: {count}. После 5 неверных попыток хранилище будет удалено из KV.",
-    "profiles.deletedAfterAttempts": "PIN введён неверно 5 раз. Хранилище удалено из KV, профиль удалён из cookie.",
+    "profiles.deletedAfterAttempts": "PIN введён неверно 5 раз. Хранилище удалено из KV, профиль удалён из браузера.",
     "profiles.deleteAfterAttemptsError": "Не удалось удалить хранилище после 5 неверных PIN-попыток.",
     "accessKind.primary": "Основной ID",
     "accessKind.alias": "Пользовательский код",
@@ -379,21 +379,21 @@ const TRANSLATIONS = {
     "profiles.open": "Open",
     "profiles.remove": "Remove",
     "profiles.clear": "Clear",
-    "profiles.clearConfirm": "Delete all saved profiles from this browser cookie?",
+    "profiles.clearConfirm": "Delete all saved profiles from this browser storage?",
     "profiles.rememberTitle": "Remember profile on this device",
-    "profiles.rememberHelp": "The profile is saved in this browser cookie without expiration. PIN-protected profiles ask for the PIN when opened.",
+    "profiles.rememberHelp": "The profile is saved in this browser storage without expiration. PIN-protected profiles ask for the PIN when opened.",
     "profiles.pinEnabledTitle": "Protect the saved profile with a PIN",
-    "profiles.pinEnabledHelp": "If PIN is off, a stolen cookie can open the profile without an extra secret.",
+    "profiles.pinEnabledHelp": "If PIN is off, browser storage access can open the profile without an extra secret.",
     "profiles.pinLabel": "Profile PIN",
     "profiles.pinPlaceholder": "3-6",
-    "profiles.pinHelp": "The PIN is optional, but it protects the saved profile from direct use of a stolen cookie. 5 wrong attempts delete the vault from KV.",
+    "profiles.pinHelp": "The PIN is optional, but it protects the saved profile from direct use of browser storage data. 5 wrong attempts delete the vault from KV.",
     "profiles.pinUnlockTitle": "Enter PIN for {label}",
     "profiles.pinUnlockHelp": "5 wrong attempts delete the linked vault from KV.",
-    "profiles.pinDisabledWarning": "PIN protection is off. Security is lower: if the cookie is stolen, the profile can be opened without a PIN.",
+    "profiles.pinDisabledWarning": "PIN protection is off. Security is lower: if browser storage is accessed, the profile can be opened without a PIN.",
     "profiles.pinInvalid": "Enter a PIN from 3 to 6 printable characters.",
     "profiles.rememberImportedTitle": "Add created IDs to profiles",
     "profiles.rememberImportedHelp": "After import they will appear on the get-code tab.",
-    "profiles.cookieHelp": "With PIN, the cookie stores a profile reference and salt while the access ID stays PIN-encrypted in KV. Without PIN, the cookie stores a device secret. 5 wrong PIN attempts delete the vault from KV.",
+    "profiles.cookieHelp": "With PIN, the browser stores a profile reference and salt while the access ID stays PIN-encrypted in KV. Without PIN, the browser stores a device secret. 5 wrong PIN attempts delete the vault from KV.",
     "profiles.kind.primary": "Primary ID",
     "profiles.kind.alias": "Custom code",
     "profiles.pinProtected": "PIN",
@@ -407,7 +407,7 @@ const TRANSLATIONS = {
     "profiles.attemptsLeft": "{count} left",
     "profiles.pinWrong": "Wrong PIN.",
     "profiles.pinWrongWithAttempts": "Wrong PIN. Attempts left: {count}. After 5 wrong attempts the vault will be deleted from KV.",
-    "profiles.deletedAfterAttempts": "The PIN was entered incorrectly 5 times. The vault was deleted from KV and the profile was removed from the cookie.",
+    "profiles.deletedAfterAttempts": "The PIN was entered incorrectly 5 times. The vault was deleted from KV and the profile was removed from the browser.",
     "profiles.deleteAfterAttemptsError": "Could not delete the vault after 5 wrong PIN attempts.",
     "accessKind.primary": "Primary ID",
     "accessKind.alias": "Custom code",
@@ -605,21 +605,21 @@ const TRANSLATIONS = {
     "profiles.open": "打开",
     "profiles.remove": "删除",
     "profiles.clear": "清空",
-    "profiles.clearConfirm": "从此浏览器 cookie 中删除所有已保存配置？",
+    "profiles.clearConfirm": "从此浏览器存储中删除所有已保存配置？",
     "profiles.rememberTitle": "在此设备记住配置",
-    "profiles.rememberHelp": "配置会保存在此浏览器的无过期 cookie 中。受 PIN 保护的配置在打开时会要求输入 PIN。",
+    "profiles.rememberHelp": "配置会保存在此浏览器存储中且不设置过期时间。受 PIN 保护的配置在打开时会要求输入 PIN。",
     "profiles.pinEnabledTitle": "用 PIN 保护保存的配置",
-    "profiles.pinEnabledHelp": "如果关闭 PIN，cookie 被盗后可在没有额外 secret 的情况下打开配置。",
+    "profiles.pinEnabledHelp": "如果关闭 PIN，能访问浏览器存储的人可在没有额外 secret 的情况下打开配置。",
     "profiles.pinLabel": "配置 PIN",
     "profiles.pinPlaceholder": "3–6",
-    "profiles.pinHelp": "PIN 是可选的，但可防止被盗 cookie 被直接使用。5 次错误尝试会从 KV 删除保险库。",
+    "profiles.pinHelp": "PIN 是可选的，但可防止浏览器存储数据被直接使用。5 次错误尝试会从 KV 删除保险库。",
     "profiles.pinUnlockTitle": "输入 {label} 的 PIN",
     "profiles.pinUnlockHelp": "5 次错误尝试会从 KV 删除关联保险库。",
-    "profiles.pinDisabledWarning": "PIN 保护已关闭。安全级别降低：cookie 被盗后，配置可在没有 PIN 的情况下打开。",
+    "profiles.pinDisabledWarning": "PIN 保护已关闭。安全级别降低：浏览器存储被访问后，配置可在没有 PIN 的情况下打开。",
     "profiles.pinInvalid": "请输入 3 到 6 个可打印字符的 PIN。",
     "profiles.rememberImportedTitle": "将创建的 ID 添加到配置",
     "profiles.rememberImportedHelp": "导入后它们会显示在获取代码标签页。",
-    "profiles.cookieHelp": "启用 PIN 时，cookie 保存资料引用和盐，access ID 以 PIN 加密形式保存在 KV。关闭 PIN 时，cookie 保存 device secret。5 次错误 PIN 尝试会从 KV 删除保险库。",
+    "profiles.cookieHelp": "启用 PIN 时，浏览器保存配置引用和盐，access ID 以 PIN 加密形式保存在 KV。关闭 PIN 时，浏览器保存 device secret。5 次错误 PIN 尝试会从 KV 删除保险库。",
     "profiles.kind.primary": "主 ID",
     "profiles.kind.alias": "自定义代码",
     "profiles.pinProtected": "PIN",
@@ -633,7 +633,7 @@ const TRANSLATIONS = {
     "profiles.attemptsLeft": "剩余 {count}",
     "profiles.pinWrong": "PIN 错误。",
     "profiles.pinWrongWithAttempts": "PIN 错误。剩余尝试次数：{count}。5 次错误后保险库将从 KV 删除。",
-    "profiles.deletedAfterAttempts": "PIN 已连续 5 次输入错误。保险库已从 KV 删除，配置已从 cookie 删除。",
+    "profiles.deletedAfterAttempts": "PIN 已连续 5 次输入错误。保险库已从 KV 删除，配置已从浏览器删除。",
     "profiles.deleteAfterAttemptsError": "5 次错误 PIN 后无法删除保险库。",
     "accessKind.primary": "主 ID",
     "accessKind.alias": "自定义代码",
@@ -821,21 +821,21 @@ const TRANSLATIONS = {
     "profiles.open": "Abrir",
     "profiles.remove": "Eliminar",
     "profiles.clear": "Limpiar",
-    "profiles.clearConfirm": "¿Eliminar todos los perfiles guardados de la cookie de este navegador?",
+    "profiles.clearConfirm": "¿Eliminar todos los perfiles guardados del almacenamiento de este navegador?",
     "profiles.rememberTitle": "Recordar perfil en este dispositivo",
-    "profiles.rememberHelp": "El perfil se guarda en la cookie de este navegador sin caducidad. Los perfiles protegidos con PIN pedirán el PIN al abrirse.",
+    "profiles.rememberHelp": "El perfil se guarda en el almacenamiento de este navegador sin caducidad. Los perfiles protegidos con PIN pedirán el PIN al abrirse.",
     "profiles.pinEnabledTitle": "Proteger el perfil guardado con PIN",
-    "profiles.pinEnabledHelp": "Si el PIN está desactivado, una cookie robada puede abrir el perfil sin un secreto adicional.",
+    "profiles.pinEnabledHelp": "Si el PIN está desactivado, el acceso al almacenamiento del navegador puede abrir el perfil sin un secreto adicional.",
     "profiles.pinLabel": "PIN del perfil",
     "profiles.pinPlaceholder": "3-6",
-    "profiles.pinHelp": "El PIN es opcional, pero protege el perfil guardado contra el uso directo de una cookie robada. 5 intentos erróneos eliminan la bóveda de KV.",
+    "profiles.pinHelp": "El PIN es opcional, pero protege el perfil guardado contra el uso directo de los datos del almacenamiento del navegador. 5 intentos erróneos eliminan la bóveda de KV.",
     "profiles.pinUnlockTitle": "Introduce el PIN para {label}",
     "profiles.pinUnlockHelp": "5 intentos erróneos eliminan la bóveda vinculada de KV.",
-    "profiles.pinDisabledWarning": "La protección con PIN está desactivada. La seguridad baja: si roban la cookie, el perfil podrá abrirse sin PIN.",
+    "profiles.pinDisabledWarning": "La protección con PIN está desactivada. La seguridad baja: si se accede al almacenamiento del navegador, el perfil podrá abrirse sin PIN.",
     "profiles.pinInvalid": "Introduce un PIN de 3 a 6 caracteres imprimibles.",
     "profiles.rememberImportedTitle": "Añadir los ID creados a perfiles",
     "profiles.rememberImportedHelp": "Después de importar aparecerán en la pestaña para obtener código.",
-    "profiles.cookieHelp": "Con PIN, la cookie guarda una referencia del perfil y la sal, mientras el access ID queda cifrado con PIN en KV. Sin PIN, la cookie guarda un device secret. 5 PIN erróneos eliminan la bóveda de KV.",
+    "profiles.cookieHelp": "Con PIN, el navegador guarda una referencia del perfil y la sal, mientras el access ID queda cifrado con PIN en KV. Sin PIN, el navegador guarda un device secret. 5 PIN erróneos eliminan la bóveda de KV.",
     "profiles.kind.primary": "ID principal",
     "profiles.kind.alias": "Código personalizado",
     "profiles.pinProtected": "PIN",
@@ -849,7 +849,7 @@ const TRANSLATIONS = {
     "profiles.attemptsLeft": "quedan {count}",
     "profiles.pinWrong": "PIN incorrecto.",
     "profiles.pinWrongWithAttempts": "PIN incorrecto. Intentos restantes: {count}. Tras 5 intentos erróneos, la bóveda se eliminará de KV.",
-    "profiles.deletedAfterAttempts": "El PIN se introdujo mal 5 veces. La bóveda se eliminó de KV y el perfil se eliminó de la cookie.",
+    "profiles.deletedAfterAttempts": "El PIN se introdujo mal 5 veces. La bóveda se eliminó de KV y el perfil se eliminó del navegador.",
     "profiles.deleteAfterAttemptsError": "No se pudo eliminar la bóveda tras 5 intentos de PIN erróneos.",
     "accessKind.primary": "ID principal",
     "accessKind.alias": "Código personalizado",
@@ -1036,21 +1036,21 @@ const TRANSLATIONS = {
     "profiles.open": "Abrir",
     "profiles.remove": "Remover",
     "profiles.clear": "Limpar",
-    "profiles.clearConfirm": "Excluir todos os perfis salvos do cookie deste navegador?",
+    "profiles.clearConfirm": "Excluir todos os perfis salvos do armazenamento deste navegador?",
     "profiles.rememberTitle": "Lembrar perfil neste dispositivo",
-    "profiles.rememberHelp": "O perfil fica salvo no cookie deste navegador sem expiração. Perfis protegidos por PIN pedirão o PIN ao abrir.",
+    "profiles.rememberHelp": "O perfil fica salvo no armazenamento deste navegador sem expiração. Perfis protegidos por PIN pedirão o PIN ao abrir.",
     "profiles.pinEnabledTitle": "Proteger o perfil salvo com PIN",
-    "profiles.pinEnabledHelp": "Se o PIN ficar desativado, um cookie roubado poderá abrir o perfil sem um segredo adicional.",
+    "profiles.pinEnabledHelp": "Se o PIN ficar desativado, o acesso ao armazenamento do navegador poderá abrir o perfil sem um segredo adicional.",
     "profiles.pinLabel": "PIN do perfil",
     "profiles.pinPlaceholder": "3-6",
-    "profiles.pinHelp": "O PIN é opcional, mas protege o perfil salvo contra o uso direto de um cookie roubado. 5 tentativas erradas excluem o cofre do KV.",
+    "profiles.pinHelp": "O PIN é opcional, mas protege o perfil salvo contra o uso direto dos dados do armazenamento do navegador. 5 tentativas erradas excluem o cofre do KV.",
     "profiles.pinUnlockTitle": "Digite o PIN para {label}",
     "profiles.pinUnlockHelp": "5 tentativas erradas excluem o cofre vinculado do KV.",
-    "profiles.pinDisabledWarning": "A proteção por PIN está desativada. A segurança fica menor: se o cookie for roubado, o perfil poderá ser aberto sem PIN.",
+    "profiles.pinDisabledWarning": "A proteção por PIN está desativada. A segurança fica menor: se o armazenamento do navegador for acessado, o perfil poderá ser aberto sem PIN.",
     "profiles.pinInvalid": "Digite um PIN de 3 a 6 caracteres imprimíveis.",
     "profiles.rememberImportedTitle": "Adicionar IDs criados aos perfis",
     "profiles.rememberImportedHelp": "Após a importação eles aparecerão na aba de obter código.",
-    "profiles.cookieHelp": "Com PIN, o cookie guarda uma referência do perfil e o salt, enquanto o access ID fica criptografado com PIN no KV. Sem PIN, o cookie guarda um device secret. 5 PINs errados excluem o cofre do KV.",
+    "profiles.cookieHelp": "Com PIN, o navegador guarda uma referência do perfil e o salt, enquanto o access ID fica criptografado com PIN no KV. Sem PIN, o navegador guarda um device secret. 5 PINs errados excluem o cofre do KV.",
     "profiles.kind.primary": "ID principal",
     "profiles.kind.alias": "Código personalizado",
     "profiles.pinProtected": "PIN",
@@ -1064,7 +1064,7 @@ const TRANSLATIONS = {
     "profiles.attemptsLeft": "restam {count}",
     "profiles.pinWrong": "PIN incorreto.",
     "profiles.pinWrongWithAttempts": "PIN incorreto. Tentativas restantes: {count}. Após 5 tentativas erradas, o cofre será excluído do KV.",
-    "profiles.deletedAfterAttempts": "O PIN foi digitado incorretamente 5 vezes. O cofre foi excluído do KV e o perfil foi removido do cookie.",
+    "profiles.deletedAfterAttempts": "O PIN foi digitado incorretamente 5 vezes. O cofre foi excluído do KV e o perfil foi removido do navegador.",
     "profiles.deleteAfterAttemptsError": "Não foi possível excluir o cofre após 5 tentativas de PIN incorretas.",
     "accessKind.primary": "ID principal",
     "accessKind.alias": "Código personalizado",
@@ -1403,6 +1403,15 @@ function deleteProfileCookie() {
   document.cookie = `${PROFILE_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax${cookieSecureAttribute()}`;
 }
 
+function deleteSavedProfileStorage() {
+  try {
+    localStorage.removeItem(PROFILE_STORAGE_KEY);
+  } catch {
+    // Storage cleanup is best-effort.
+  }
+  deleteProfileCookie();
+}
+
 function safeProfileLabel(value) {
   return String(value || "Steam Guard").replace(/\s+/g, " ").trim().slice(0, 80) || "Steam Guard";
 }
@@ -1603,6 +1612,34 @@ function loadSavedProfilesFromCookie() {
   }
 }
 
+function loadSavedProfilesFromStorage() {
+  try {
+    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const items = Array.isArray(parsed) ? parsed : parsed?.profiles;
+      if (Array.isArray(items)) {
+        return dedupeSavedProfiles(
+          items
+            .map(normalizeSavedProfile)
+            .filter(Boolean)
+            .sort((left, right) => right.t - left.t),
+        ).slice(0, SAVED_PROFILE_LIMIT);
+      }
+    }
+  } catch {
+    // Fall back to the legacy cookie below.
+  }
+
+  const migratedProfiles = loadSavedProfilesFromCookie();
+  if (migratedProfiles.length) {
+    const storedProfiles = writeSavedProfilesToStorage(migratedProfiles);
+    if (storedProfiles.length >= migratedProfiles.length) deleteProfileCookie();
+    return storedProfiles;
+  }
+  return [];
+}
+
 function writeSavedProfilesToCookie(profiles) {
   const normalized = dedupeSavedProfiles(profiles.map(normalizeSavedProfile).filter(Boolean)).slice(0, SAVED_PROFILE_LIMIT);
   if (!normalized.length) {
@@ -1621,6 +1658,22 @@ function writeSavedProfilesToCookie(profiles) {
 
   deleteProfileCookie();
   return [];
+}
+
+function writeSavedProfilesToStorage(profiles) {
+  const normalized = dedupeSavedProfiles(profiles.map(normalizeSavedProfile).filter(Boolean)).slice(0, SAVED_PROFILE_LIMIT);
+  if (!normalized.length) {
+    deleteSavedProfileStorage();
+    return [];
+  }
+
+  try {
+    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(normalized));
+    deleteProfileCookie();
+    return normalized;
+  } catch {
+    return writeSavedProfilesToCookie(normalized);
+  }
 }
 
 async function createSavedProfile(profile) {
@@ -1673,7 +1726,7 @@ function mergeSavedProfile(profiles, profile) {
 }
 
 async function rememberSavedProfiles(profilesToRemember) {
-  let profiles = state.savedProfiles.length ? [...state.savedProfiles] : loadSavedProfilesFromCookie();
+  let profiles = state.savedProfiles.length ? [...state.savedProfiles] : loadSavedProfilesFromStorage();
   const rememberedProfiles = [];
 
   for (const profile of profilesToRemember) {
@@ -1686,11 +1739,15 @@ async function rememberSavedProfiles(profilesToRemember) {
 
     const createdProfile = await createSavedProfile(profile);
     profiles = mergeSavedProfile(profiles, createdProfile);
+    profiles = writeSavedProfilesToStorage(profiles);
     const normalized = normalizeSavedProfile(createdProfile);
-    if (normalized) rememberedProfiles.push(normalized);
+    const storedProfile = normalized
+      ? profiles.find((item) => item.id === normalized.id || (normalized.r && item.r === normalized.r))
+      : null;
+    if (storedProfile) rememberedProfiles.push(storedProfile);
   }
 
-  state.savedProfiles = writeSavedProfilesToCookie(profiles);
+  state.savedProfiles = writeSavedProfilesToStorage(profiles);
   renderSavedProfiles();
   return rememberedProfiles
     .map((profile) => state.savedProfiles.find((item) => item.id === profile.id || (profile.r && item.r === profile.r)))
@@ -1712,7 +1769,7 @@ function updateSavedProfileMetadata(id, { recordId, label, kind, mask } = {}) {
   });
   if (!nextProfile) return;
 
-  state.savedProfiles = writeSavedProfilesToCookie([
+  state.savedProfiles = writeSavedProfilesToStorage([
     nextProfile,
     ...state.savedProfiles.filter((_, profileIndex) => profileIndex !== index),
   ]);
@@ -1720,13 +1777,13 @@ function updateSavedProfileMetadata(id, { recordId, label, kind, mask } = {}) {
 }
 
 function removeSavedProfile(id) {
-  state.savedProfiles = writeSavedProfilesToCookie(state.savedProfiles.filter((profile) => profile.id !== id));
+  state.savedProfiles = writeSavedProfilesToStorage(state.savedProfiles.filter((profile) => profile.id !== id));
   renderSavedProfiles();
 }
 
 function clearSavedProfiles() {
   state.savedProfiles = [];
-  deleteProfileCookie();
+  deleteSavedProfileStorage();
   renderSavedProfiles();
 }
 
@@ -1842,7 +1899,7 @@ function handleSavedProfilePinFailure(index, error) {
 
   if (error instanceof ApiRequestError && error.status === 403) {
     if (error.data?.deleted) {
-      state.savedProfiles = writeSavedProfilesToCookie(state.savedProfiles.filter((item) => item.id !== profile.id));
+      state.savedProfiles = writeSavedProfilesToStorage(state.savedProfiles.filter((item) => item.id !== profile.id));
       renderSavedProfiles();
       hideSavedProfilePinPanel();
       setStatus(elements.savedProfileStatus, t("profiles.deletedAfterAttempts"), "error");
@@ -1856,7 +1913,7 @@ function handleSavedProfilePinFailure(index, error) {
       a: SAVED_PROFILE_MAX_PIN_ATTEMPTS - attemptsLeft,
       t: Date.now(),
     };
-    state.savedProfiles = writeSavedProfilesToCookie(nextProfiles);
+    state.savedProfiles = writeSavedProfilesToStorage(nextProfiles);
     renderSavedProfiles();
     showSavedProfilePinPanel(index, { clearStatus: false });
     setStatus(
@@ -1868,7 +1925,7 @@ function handleSavedProfilePinFailure(index, error) {
   }
 
   if (error instanceof ApiRequestError && error.status === 404) {
-    state.savedProfiles = writeSavedProfilesToCookie(state.savedProfiles.filter((item) => item.id !== profile.id));
+    state.savedProfiles = writeSavedProfilesToStorage(state.savedProfiles.filter((item) => item.id !== profile.id));
     renderSavedProfiles();
     hideSavedProfilePinPanel();
   }
@@ -1900,7 +1957,7 @@ async function openSavedProfile(index, pin) {
     const accessCode = await decryptAccessCodeFromProfile(profile, secret);
     const nextProfiles = [...state.savedProfiles];
     nextProfiles[index] = { ...profile, a: 0, t: Date.now() };
-    state.savedProfiles = writeSavedProfilesToCookie(nextProfiles);
+    state.savedProfiles = writeSavedProfilesToStorage(nextProfiles);
     renderSavedProfiles();
     setStatus(elements.savedProfileStatus);
 
@@ -2722,7 +2779,7 @@ async function handleDeleteVault() {
       try {
         await apiPost("/api/delete-saved", { id: deletedSavedProfileId });
       } catch {
-        // The vault is already gone; cookie cleanup below is still useful.
+        // The vault is already gone; local profile cleanup below is still useful.
       }
       removeSavedProfile(deletedSavedProfileId);
     }
@@ -2877,7 +2934,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 currentLanguage = getInitialLanguage();
-state.savedProfiles = loadSavedProfilesFromCookie();
+state.savedProfiles = loadSavedProfilesFromStorage();
 elements.year.textContent = new Date().getFullYear();
 setVaultMode("access");
 setSelectedFiles([]);

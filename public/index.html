@@ -32,7 +32,6 @@
           </span>
         </a>
         <nav class="header-page-links" aria-label="Информационные разделы" data-i18n-attr="aria-label:header.infoTabsAria">
-          <a class="header-mode-button" href="/security" data-site-tab="security" data-i18n="vault.tab.security">Безопасность</a>
           <a class="header-mode-button" href="/api" data-site-tab="api" data-i18n="vault.tab.api">API</a>
         </nav>
       </div>
@@ -271,47 +270,6 @@
       </section>
 
       <section id="site-info-panels" class="site-info-panels section-shell" hidden>
-        <section id="site-security-panel" class="site-tab-panel" data-site-panel="security" role="tabpanel" aria-label="Безопасность и ограничения" data-i18n-attr="aria-label:security.panelAria" hidden>
-          <div class="info-panel">
-            <div class="panel-intro">
-              <span class="card-kicker" data-i18n-html="faq.eyebrow"><span></span> Важно знать</span>
-              <h3 data-i18n="faq.title">Безопасность и ограничения</h3>
-            </div>
-
-            <div class="faq-list compact-list">
-              <details>
-                <summary data-i18n="faq.encryptedQuestion">Можно ли загрузить зашифрованный maFile?</summary>
-                <p data-i18n-html="faq.encryptedAnswer">
-                  Эта версия принимает обычный JSON maFile с полем <code>shared_secret</code>. Она не запрашивает пароль
-                  шифрования SDA и тем более пароль Steam. Зашифрованный maFile нужно предварительно открыть локально.
-                </p>
-              </details>
-              <details>
-                <summary data-i18n="faq.storageQuestion">Хранится ли полный maFile в Cloudflare KV?</summary>
-                <p data-i18n="faq.storageAnswer">
-                  Нет. Поля для trade confirmations, session tokens, revocation code и device data отбрасываются. Оставшиеся
-                  минимальные данные зашифрованы AES-GCM ещё до отправки.
-                </p>
-              </details>
-              <details>
-                <summary data-i18n="faq.aliasQuestion">Почему лучше делать пользовательский код длинным?</summary>
-                <p data-i18n="faq.aliasAnswer">Он является bearer-секретом и ключом к расшифровке. Интерфейс разрешает коды от 3 символов, но короткий или популярный код можно подобрать.</p>
-              </details>
-              <details>
-                <summary data-i18n="faq.cookieQuestion">Где хранятся сохранённые профили?</summary>
-                <p data-i18n="faq.cookieAnswer">PIN для сохранённых профилей включён по умолчанию, но его можно отключить. С PIN cookie хранит ссылку на профиль и соль, а основной ID или пользовательский код хранится в KV в PIN-зашифрованном виде. Без PIN cookie хранит device secret. 5 неверных PIN-попыток удалят хранилище из KV.</p>
-              </details>
-              <details>
-                <summary data-i18n="faq.steamQuestion">Это заменяет официальное приложение Steam?</summary>
-                <p data-i18n="faq.steamAnswer">
-                  Технически сайт генерирует коды из существующего shared_secret, но хранение второго фактора онлайн уменьшает
-                  разделение факторов. Для максимальной безопасности используйте официальное мобильное приложение Steam.
-                </p>
-              </details>
-            </div>
-          </div>
-        </section>
-
         <section id="site-api-panel" class="site-tab-panel" data-site-panel="api" role="tabpanel" aria-label="API сайта" data-i18n-attr="aria-label:api.panelAria" hidden>
           <div class="info-panel">
             <div class="panel-intro">

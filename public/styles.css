@@ -1125,7 +1125,6 @@ button:disabled {
   scroll-margin-top: 18px;
 }
 
-body[data-page="security"] .site-info-panels,
 body[data-page="api"] .site-info-panels {
   min-height: calc(100vh - 84px);
   padding-block: clamp(42px, 7vw, 76px) 92px;
