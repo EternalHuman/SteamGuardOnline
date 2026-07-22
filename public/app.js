@@ -53,6 +53,7 @@ const elements = {
   aliasHint: document.querySelector("#alias-hint"),
   keepLabel: document.querySelector("#keep-label"),
   rememberImportedPinEnabled: document.querySelector("#remember-imported-pin-enabled"),
+  rememberImportedPinField: document.querySelector("#remember-imported-pin-field"),
   rememberImportedPin: document.querySelector("#remember-imported-pin"),
   rememberImportedPinWarning: document.querySelector("#remember-imported-pin-warning"),
   importSubmit: document.querySelector("#import-submit"),
@@ -85,10 +86,12 @@ const LANGUAGE_STORAGE_KEY = "sda-vault-language";
 const PROFILE_COOKIE_NAME = "sgo_saved_profiles_v1";
 const PROFILE_COOKIE_EXPIRES = "Fri, 31 Dec 9999 23:59:59 GMT";
 const PROFILE_COOKIE_MAX_BYTES = 3500;
+const IMPORT_FILE_LIMIT = 50;
 const SAVED_PROFILE_LIMIT = 32;
 const SAVED_PROFILE_MAX_PIN_ATTEMPTS = 5;
 const SAVED_PROFILE_ID_BYTES = 18;
 const SAVED_PROFILE_DEVICE_SECRET_BYTES = 32;
+const SAVED_PROFILE_RECORD_ID_LENGTH = 24;
 const PIN_KDF_ITERATIONS = 260_000;
 const PROFILE_PIN_SALT_PREFIX = "SGO saved profile PIN v1";
 const PROFILE_PIN_AAD = new TextEncoder().encode("SGO saved profile access code v1");
@@ -201,6 +204,7 @@ const TRANSLATIONS = {
       "Из файла извлекаются только <code>shared_secret</code> и, по вашему выбору, имя аккаунта. <code>identity_secret</code>, session, revocation code и другие поля игнорируются.",
     "import.submit": "Зашифровать и сохранить",
     "import.noFileError": "Выберите один или несколько maFile.",
+    "import.tooManyFiles": "За один раз можно загрузить не больше {max} maFile.",
     "import.fileTooLarge": "Размер каждого maFile не должен превышать 1 МБ.",
     "import.aliasEqualsPrimary": "Пользовательский код случайно совпал с основным ID. Измените пользовательский код.",
     "import.aliasMultipleError": "Пользовательский код можно указать только при загрузке одного maFile.",
@@ -431,6 +435,7 @@ const TRANSLATIONS = {
       "Only <code>shared_secret</code> and, if you choose, the account name are extracted. <code>identity_secret</code>, session, revocation code, and other fields are ignored.",
     "import.submit": "Encrypt and save",
     "import.noFileError": "Choose one or more maFiles.",
+    "import.tooManyFiles": "You can upload up to {max} maFiles at once.",
     "import.fileTooLarge": "Each maFile must not exceed 1 MB.",
     "import.aliasEqualsPrimary": "The custom code randomly matched the primary ID. Change the custom code.",
     "import.aliasMultipleError": "A custom code can be used only when uploading one maFile.",
@@ -656,6 +661,7 @@ const TRANSLATIONS = {
       "只会提取 <code>shared_secret</code>，以及你选择保留的账号名称。<code>identity_secret</code>、session、revocation code 和其他字段会被忽略。",
     "import.submit": "加密并保存",
     "import.noFileError": "请选择一个或多个 maFile。",
+    "import.tooManyFiles": "一次最多可上传 {max} 个 maFile。",
     "import.fileTooLarge": "每个 maFile 大小不能超过 1 MB。",
     "import.aliasEqualsPrimary": "自定义代码意外与主 ID 相同。请更改自定义代码。",
     "import.aliasMultipleError": "自定义代码只能用于上传一个 maFile。",
@@ -870,6 +876,7 @@ const TRANSLATIONS = {
     "import.security": "Solo se extraen <code>shared_secret</code> y, si lo eliges, el nombre de la cuenta. <code>identity_secret</code>, session, revocation code y otros campos se ignoran.",
     "import.submit": "Cifrar y guardar",
     "import.noFileError": "Elige uno o varios maFiles.",
+    "import.tooManyFiles": "Puedes subir hasta {max} maFiles a la vez.",
     "import.fileTooLarge": "Cada maFile debe tener 1 MB como máximo.",
     "import.aliasEqualsPrimary": "El código personalizado coincidió con el ID principal. Cambia el código personalizado.",
     "import.aliasMultipleError": "El código personalizado solo se puede usar al subir un maFile.",
@@ -1084,6 +1091,7 @@ const TRANSLATIONS = {
     "import.security": "Apenas <code>shared_secret</code> e, se você escolher, o nome da conta são extraídos. <code>identity_secret</code>, session, revocation code e outros campos são ignorados.",
     "import.submit": "Criptografar e salvar",
     "import.noFileError": "Escolha um ou mais maFiles.",
+    "import.tooManyFiles": "Você pode enviar até {max} maFiles por vez.",
     "import.fileTooLarge": "Cada maFile deve ter no máximo 1 MB.",
     "import.aliasEqualsPrimary": "O código personalizado coincidiu com o ID principal. Altere o código personalizado.",
     "import.aliasMultipleError": "O código personalizado só pode ser usado ao enviar um maFile.",
@@ -1415,6 +1423,10 @@ function validateSavedProfileId(value) {
   return typeof value === "string" && /^[A-Za-z0-9_-]{24,64}$/.test(value);
 }
 
+function validateProfileRecordId(value) {
+  return typeof value === "string" && value.length === SAVED_PROFILE_RECORD_ID_LENGTH && /^[A-Za-z0-9_-]+$/.test(value);
+}
+
 function validateProfileSalt(value) {
   return typeof value === "string" && /^[A-Za-z0-9_-]{22}$/.test(value);
 }
@@ -1537,12 +1549,14 @@ function normalizeSavedProfile(profile) {
   const deviceSecret = pinProtected ? null : profile.x;
   if (!pinProtected && !validateDeviceSecret(deviceSecret)) return null;
 
+  const recordId = profile?.r ?? profile?.recordId;
   const savedAt = Number(profile?.t ?? profile?.savedAt);
   const attempts = Number(profile?.a);
   return {
     v: 4,
     id: profile.id,
     s: profile.s,
+    ...(validateProfileRecordId(recordId) ? { r: recordId } : {}),
     p: pinProtected ? 1 : 0,
     ...(pinProtected ? {} : { x: deviceSecret }),
     l: safeProfileLabel(profile?.l ?? profile?.label),
@@ -1551,6 +1565,22 @@ function normalizeSavedProfile(profile) {
     a: Number.isFinite(attempts) ? Math.min(Math.max(0, Math.floor(attempts)), SAVED_PROFILE_MAX_PIN_ATTEMPTS) : 0,
     t: Number.isFinite(savedAt) ? savedAt : Date.now(),
   };
+}
+
+function dedupeSavedProfiles(profiles) {
+  const seenIds = new Set();
+  const seenRecords = new Set();
+  const result = [];
+
+  for (const profile of profiles) {
+    if (seenIds.has(profile.id)) continue;
+    if (profile.r && seenRecords.has(profile.r)) continue;
+    seenIds.add(profile.id);
+    if (profile.r) seenRecords.add(profile.r);
+    result.push(profile);
+  }
+
+  return result;
 }
 
 function loadSavedProfilesFromCookie() {
@@ -1562,18 +1592,19 @@ function loadSavedProfilesFromCookie() {
     const items = Array.isArray(parsed) ? parsed : parsed?.profiles;
     if (!Array.isArray(items)) return [];
 
-    return items
-      .map(normalizeSavedProfile)
-      .filter(Boolean)
-      .sort((left, right) => right.t - left.t)
-      .slice(0, SAVED_PROFILE_LIMIT);
+    return dedupeSavedProfiles(
+      items
+        .map(normalizeSavedProfile)
+        .filter(Boolean)
+        .sort((left, right) => right.t - left.t),
+    ).slice(0, SAVED_PROFILE_LIMIT);
   } catch {
     return [];
   }
 }
 
 function writeSavedProfilesToCookie(profiles) {
-  const normalized = profiles.map(normalizeSavedProfile).filter(Boolean).slice(0, SAVED_PROFILE_LIMIT);
+  const normalized = dedupeSavedProfiles(profiles.map(normalizeSavedProfile).filter(Boolean)).slice(0, SAVED_PROFILE_LIMIT);
   if (!normalized.length) {
     deleteProfileCookie();
     return [];
@@ -1621,6 +1652,7 @@ async function createSavedProfile(profile) {
     v: 4,
     id,
     s: sealed.salt,
+    ...(validateProfileRecordId(profile?.recordId) ? { r: profile.recordId } : {}),
     p: usePin ? 1 : 0,
     ...(usePin ? {} : { x: secret }),
     l: safeProfileLabel(profile?.label),
@@ -1634,16 +1666,56 @@ async function createSavedProfile(profile) {
 function mergeSavedProfile(profiles, profile) {
   const normalized = normalizeSavedProfile(profile);
   if (!normalized) return profiles;
-  return [normalized, ...profiles.filter((item) => item.id !== normalized.id)].slice(0, SAVED_PROFILE_LIMIT);
+  return [
+    normalized,
+    ...profiles.filter((item) => item.id !== normalized.id && (!normalized.r || item.r !== normalized.r)),
+  ].slice(0, SAVED_PROFILE_LIMIT);
 }
 
 async function rememberSavedProfiles(profilesToRemember) {
   let profiles = state.savedProfiles.length ? [...state.savedProfiles] : loadSavedProfilesFromCookie();
+  const rememberedProfiles = [];
+
   for (const profile of profilesToRemember) {
-    profiles = mergeSavedProfile(profiles, await createSavedProfile(profile));
+    const recordId = validateProfileRecordId(profile?.recordId) ? profile.recordId : "";
+    const existingProfile = recordId ? profiles.find((item) => item.r === recordId) : null;
+    if (existingProfile) {
+      rememberedProfiles.push(existingProfile);
+      continue;
+    }
+
+    const createdProfile = await createSavedProfile(profile);
+    profiles = mergeSavedProfile(profiles, createdProfile);
+    const normalized = normalizeSavedProfile(createdProfile);
+    if (normalized) rememberedProfiles.push(normalized);
   }
 
   state.savedProfiles = writeSavedProfilesToCookie(profiles);
+  renderSavedProfiles();
+  return rememberedProfiles
+    .map((profile) => state.savedProfiles.find((item) => item.id === profile.id || (profile.r && item.r === profile.r)))
+    .filter(Boolean);
+}
+
+function updateSavedProfileMetadata(id, { recordId, label, kind, mask } = {}) {
+  const index = state.savedProfiles.findIndex((profile) => profile.id === id);
+  if (index === -1) return;
+
+  const current = state.savedProfiles[index];
+  const nextProfile = normalizeSavedProfile({
+    ...current,
+    ...(validateProfileRecordId(recordId) ? { r: recordId } : {}),
+    ...(label ? { l: label } : {}),
+    ...(kind === "alias" || kind === "primary" ? { k: kind } : {}),
+    ...(mask ? { m: mask } : {}),
+    t: Date.now(),
+  });
+  if (!nextProfile) return;
+
+  state.savedProfiles = writeSavedProfilesToCookie([
+    nextProfile,
+    ...state.savedProfiles.filter((_, profileIndex) => profileIndex !== index),
+  ]);
   renderSavedProfiles();
 }
 
@@ -2020,6 +2092,7 @@ function togglePasswordVisibility(input, button) {
 function updateRememberPinState() {
   const importPinEnabled = elements.rememberImportedPinEnabled.checked;
   elements.rememberImportedPin.disabled = !importPinEnabled;
+  if (elements.rememberImportedPinField) elements.rememberImportedPinField.hidden = !importPinEnabled;
   if (!importPinEnabled) elements.rememberImportedPin.value = "";
   setStatus(
     elements.rememberImportedPinWarning,
@@ -2285,7 +2358,7 @@ async function importMaFile(file, alias) {
       alias ? createAccessEnvelope(alias, encrypted.dataKey) : Promise.resolve(null),
     ]);
 
-    await apiPost("/api/import", {
+    const importResponse = await apiPost("/api/import", {
       payload: encrypted.payload,
       primary: primaryEnvelope,
       alias: aliasEnvelope,
@@ -2302,6 +2375,7 @@ async function importMaFile(file, alias) {
       primaryToken: primaryEnvelope.token,
       alias,
       hasAlias: Boolean(alias),
+      recordId: importResponse.recordId,
     };
   } catch (error) {
     if (encrypted?.dataKey instanceof Uint8Array) encrypted.dataKey.fill(0);
@@ -2415,7 +2489,7 @@ async function handleAccessSubmit(event) {
   }
 
   const accessCode = validation.value;
-  const savedProfileId = state.pendingSavedProfileId;
+  let savedProfileId = state.pendingSavedProfileId;
   state.pendingSavedProfileId = null;
 
   setBusy(elements.accessSubmit, true, "busy.decrypting");
@@ -2428,16 +2502,25 @@ async function handleAccessSubmit(event) {
     dataKey = await unwrapDataKeyWithPreparedAccess(response.wrap, prepared);
     const payload = await decryptEncryptedPayload(response.payload, dataKey);
 
-    if (!savedProfileId) {
-      await rememberSavedProfiles([
+    if (savedProfileId) {
+      updateSavedProfileMetadata(savedProfileId, {
+        recordId: response.recordId,
+        label: payload.label || "Steam Guard",
+        kind: response.kind,
+        mask: accessCode.slice(-4),
+      });
+    } else {
+      const [rememberedProfile] = await rememberSavedProfiles([
         {
           code: accessCode,
           token: prepared.token,
           usePin: false,
           label: payload.label || "Steam Guard",
           kind: response.kind,
+          recordId: response.recordId,
         },
       ]);
+      savedProfileId = rememberedProfile?.id || null;
     }
 
     activateVault({
@@ -2470,6 +2553,11 @@ async function handleImportSubmit(event) {
   const files = state.selectedFiles.length ? state.selectedFiles : Array.from(elements.maFileInput.files || []);
   if (files.length === 0) {
     setStatus(elements.importStatus, t("import.noFileError"), "error");
+    return;
+  }
+
+  if (files.length > IMPORT_FILE_LIMIT) {
+    setStatus(elements.importStatus, t("import.tooManyFiles", { max: IMPORT_FILE_LIMIT }), "error");
     return;
   }
 
@@ -2524,7 +2612,7 @@ async function handleImportSubmit(event) {
     }
 
     const [activeResult, ...inactiveResults] = successfulResults;
-    await rememberSavedProfiles(
+    const rememberedProfiles = await rememberSavedProfiles(
       successfulResults.map((result) => ({
         code: result.primaryCode,
         token: result.primaryToken,
@@ -2532,8 +2620,11 @@ async function handleImportSubmit(event) {
         usePin: useProfilePin,
         label: result.payload.label || result.fileName || "Steam Guard",
         kind: "primary",
+        recordId: result.recordId,
       })),
     );
+    const activeSavedProfileId =
+      rememberedProfiles.find((profile) => profile.r && profile.r === activeResult.recordId)?.id || null;
 
     for (const result of inactiveResults) {
       if (result.dataKey instanceof Uint8Array) result.dataKey.fill(0);
@@ -2548,6 +2639,7 @@ async function handleImportSubmit(event) {
       hasAlias: activeResult.hasAlias,
       accessCode: activeResult.primaryCode,
       accessToken: activeResult.primaryToken,
+      savedProfileId: activeSavedProfileId,
       scroll: files.length === 1,
     });
     activeResult.dataKey = null;
@@ -2662,6 +2754,24 @@ for (const button of elements.vaultModeButtons) {
 elements.flowToggle?.addEventListener("click", toggleFlowDetails);
 
 elements.languageSelect.addEventListener("change", () => setLanguage(elements.languageSelect.value));
+for (const link of elements.siteTabButtons) {
+  link.addEventListener("click", (event) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const tab = link.dataset.siteTab;
+    const targetUrl = new URL(link.href, window.location.href);
+    const targetPath = targetUrl.pathname.replace(/\/+$/, "") || "/";
+    if (!INFO_PAGE_BY_PATH.get(targetPath) || !tab) return;
+
+    event.preventDefault();
+    if (window.history?.pushState) {
+      window.history.pushState(null, "", `${targetPath}${targetUrl.search}${targetUrl.hash}`);
+      applyRouteLayout();
+    } else {
+      setSiteTab(tab);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+}
 elements.accessForm.addEventListener("submit", handleAccessSubmit);
 elements.importForm.addEventListener("submit", handleImportSubmit);
 elements.aliasForm.addEventListener("submit", handleAliasSubmit);
@@ -2758,6 +2868,10 @@ elements.removeAlias.addEventListener("click", handleRemoveAlias);
 elements.deleteVault.addEventListener("click", handleDeleteVault);
 
 window.addEventListener("pagehide", () => clearActiveVault());
+window.addEventListener("popstate", () => {
+  applyRouteLayout();
+  if (!state.currentInfoPage) submitAccessCodeFromUrl();
+});
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && state.vaultPayload) updateGuardCode();
 });

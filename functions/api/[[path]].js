@@ -11,6 +11,8 @@ const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 const SAVED_PROFILE_ID_PATTERN = /^[A-Za-z0-9_-]{24,64}$/;
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const MAX_REQUEST_BYTES = 24_000;
+const IMPORT_RATE_LIMIT = 50;
+const SAVE_SAVED_PROFILE_RATE_LIMIT = 50;
 const SAVED_PROFILE_MAX_PIN_ATTEMPTS = 5;
 
 class ApiError extends Error {
@@ -237,7 +239,7 @@ async function enforceRateLimit(env, request, scope, limit) {
 }
 
 async function handleImport(context) {
-  await enforceRateLimit(context.env, context.request, "import", 5);
+  await enforceRateLimit(context.env, context.request, "import", IMPORT_RATE_LIMIT);
   const body = await readJson(context.request);
   const primary = validateAccessEntry(body.primary, "primary");
   const alias = body.alias == null ? null : validateAccessEntry(body.alias, "alias");
@@ -298,7 +300,7 @@ async function handleImport(context) {
     throw error;
   }
 
-  return jsonResponse({ ok: true, createdAt: now, aliasAttached: Boolean(alias) }, 201);
+  return jsonResponse({ ok: true, recordId, createdAt: now, aliasAttached: Boolean(alias) }, 201);
 }
 
 async function handleLookup(context) {
@@ -319,6 +321,7 @@ async function handleLookup(context) {
   return jsonResponse({
     ok: true,
     kind: entry.kind,
+    recordId: entry.recordId,
     wrap: validateWrap(entry.wrap),
     payload: validatePayload(record.payload),
     createdAt: record.createdAt,
@@ -422,7 +425,7 @@ async function handleDelete(context) {
 }
 
 async function handleSaveSaved(context) {
-  await enforceRateLimit(context.env, context.request, "save-saved", 12);
+  await enforceRateLimit(context.env, context.request, "save-saved", SAVE_SAVED_PROFILE_RATE_LIMIT);
   const body = await readJson(context.request);
   const id = validateSavedProfileId(body.id);
   const accessToken = validateToken(body.accessToken, "accessToken");
