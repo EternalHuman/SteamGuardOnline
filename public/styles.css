@@ -2655,8 +2655,8 @@ body[data-page="api"] .site-info-panels {
 }
 
 .flow-mini-list.expanded li {
-  min-height: 118px;
-  padding: 16px;
+  min-height: 138px;
+  padding: 18px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.035);
@@ -2674,12 +2674,13 @@ body[data-page="api"] .site-info-panels {
 }
 
 .flow-mini-list.expanded strong {
-  font-size: 11px;
+  font-size: 14px;
+  line-height: 1.2;
 }
 
 .flow-mini-list.expanded span {
-  font-size: 10px;
-  line-height: 1.65;
+  font-size: 12.5px;
+  line-height: 1.72;
 }
 
 .benefit-card a {
