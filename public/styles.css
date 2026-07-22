@@ -19,10 +19,10 @@
   --red: #ff7373;
   --red-soft: rgba(255, 115, 115, 0.11);
   --shadow: 0 30px 90px rgba(0, 0, 0, 0.38);
-  --radius-xl: 28px;
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
+  --radius-xl: 36px;
+  --radius-lg: 26px;
+  --radius-md: 18px;
+  --radius-sm: 13px;
   --page-width: 1180px;
   --font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
@@ -90,6 +90,47 @@ a {
 
 svg {
   display: block;
+}
+
+:where(
+  .brand-mark,
+  .language-switcher select,
+  .accounts-menu-button,
+  .accounts-dropdown,
+  .ghost-link,
+  .app-card,
+  .auth-card,
+  .manage-card,
+  .mode-tabs,
+  .mode-tab,
+  input[type="text"],
+  input[type="password"],
+  input[type="search"],
+  select,
+  .inline-button,
+  .primary-button,
+  .secondary-button,
+  .copy-code-button,
+  .copy-button,
+  .form-status,
+  .file-drop,
+  .secret-row,
+  .saved-profile-row,
+  .saved-profile-drag-handle,
+  .saved-profile-remove-button,
+  .saved-profile-pin-panel,
+  .profile-pin-warning,
+  .api-detail-card,
+  .api-detail-card pre,
+  .benefit-card,
+  .benefit-icon,
+  .inline-disclosure-button,
+  .flow-details-panel,
+  .flow-mini-list.expanded li,
+  .flow-list li > span,
+  .toast
+) {
+  corner-shape: squircle;
 }
 
 .sr-only {
@@ -1259,7 +1300,10 @@ button:disabled {
 }
 
 .saved-profiles-menu-panel .saved-profile-row strong {
-  font-size: 13px;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .saved-profiles-menu-panel .saved-profile-actions {
@@ -3136,4 +3180,43 @@ body[data-page="api"] .site-info-panels {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+:is(.app-card, .auth-card, .manage-card, .benefit-card, .flow-details-panel, .api-detail-card) {
+  border-radius: var(--radius-xl);
+}
+
+:is(.accounts-dropdown, .code-layout, .file-drop, .saved-profile-pin-panel, .toast, .api-detail-card pre) {
+  border-radius: var(--radius-lg);
+}
+
+:is(
+  .brand-mark,
+  .language-switcher select,
+  .accounts-menu-button,
+  .ghost-link,
+  .mode-tabs,
+  input[type="text"],
+  input[type="password"],
+  input[type="search"],
+  select,
+  .primary-button,
+  .secondary-button,
+  .copy-code-button,
+  .copy-button,
+  .form-status,
+  .secret-row,
+  .saved-profile-row,
+  .saved-profile-drag-handle,
+  .saved-profile-remove-button,
+  .benefit-icon,
+  .inline-disclosure-button,
+  .flow-mini-list.expanded li,
+  .flow-list li > span
+) {
+  border-radius: var(--radius-md);
+}
+
+:is(.mode-tab, .inline-button, .saved-profile-pin-badge, .profile-pin-input, .profile-pin-warning) {
+  border-radius: var(--radius-sm);
 }
