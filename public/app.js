@@ -35,7 +35,6 @@ const elements = {
   accessSubmit: document.querySelector("#access-submit"),
   accessStatus: document.querySelector("#access-status"),
   accessVisibility: document.querySelector("#access-visibility"),
-  rememberProfile: document.querySelector("#remember-profile"),
   savedProfiles: document.querySelector("#saved-profiles"),
   savedProfileList: document.querySelector("#saved-profile-list"),
   savedProfilePinPanel: document.querySelector("#saved-profile-pin-panel"),
@@ -1834,7 +1833,6 @@ async function openSavedProfile(index, pin) {
     setStatus(elements.savedProfileStatus);
 
     setVaultMode("access");
-    elements.rememberProfile.checked = false;
     updateRememberPinState();
     hideSavedProfilePinPanel();
     elements.accessCode.value = accessCode;
@@ -1893,7 +1891,6 @@ function submitAccessCodeFromUrl() {
 
   removeAccessCodeFromUrl();
   setVaultMode("access");
-  elements.rememberProfile.checked = false;
   state.pendingSavedProfileId = null;
   updateRememberPinState();
   elements.accessCode.value = accessCode;
@@ -2431,7 +2428,7 @@ async function handleAccessSubmit(event) {
     dataKey = await unwrapDataKeyWithPreparedAccess(response.wrap, prepared);
     const payload = await decryptEncryptedPayload(response.payload, dataKey);
 
-    if (elements.rememberProfile.checked) {
+    if (!savedProfileId) {
       await rememberSavedProfiles([
         {
           code: accessCode,

@@ -566,7 +566,7 @@ input:disabled {
 }
 
 .input-with-action input {
-  padding-right: 56px;
+  padding-right: 58px;
 }
 
 .inline-button {
@@ -575,28 +575,34 @@ input:disabled {
   justify-content: center;
   position: absolute;
   top: 50%;
-  right: 7px;
+  right: 8px;
   transform: translateY(-50%);
-  width: 38px;
-  min-height: 35px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
   padding: 0;
   border: 0;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+  outline: 0;
+  background: rgba(255, 255, 255, 0.055);
   color: var(--muted-strong);
   cursor: pointer;
-  font-size: 11px;
-  font-weight: 650;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
 }
 
 .visibility-toggle svg {
-  width: 18px;
-  height: 18px;
+  flex: none;
+  width: 19px;
+  height: 19px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 1.85;
+  stroke-width: 1.9;
 }
 
 .inline-button:hover:not(:disabled),
