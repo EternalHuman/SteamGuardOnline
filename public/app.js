@@ -29,6 +29,7 @@ const elements = {
   accountsDropdown: document.querySelector(".accounts-dropdown"),
   savedProfilesCount: document.querySelector("#saved-profiles-count"),
   savedProfilesSiteSlot: document.querySelector("#saved-profiles-site-slot"),
+  vaultCard: document.querySelector(".vault-card"),
   vaultModeButtons: [...document.querySelectorAll("[data-vault-mode]")],
   vaultModePanels: [...document.querySelectorAll("[data-vault-panel]")],
   siteTabButtons: [...document.querySelectorAll("[data-site-tab]")],
@@ -48,6 +49,7 @@ const elements = {
   savedProfilePinPanel: document.querySelector("#saved-profile-pin-panel"),
   savedProfilePinTitle: document.querySelector("#saved-profile-pin-title"),
   savedProfilePin: document.querySelector("#saved-profile-pin"),
+  savedProfilePinVisibility: document.querySelector("#saved-profile-pin-visibility"),
   savedProfilePinSubmit: document.querySelector("#saved-profile-pin-submit"),
   savedProfilePinCancel: document.querySelector("#saved-profile-pin-cancel"),
   savedProfileStatus: document.querySelector("#saved-profile-status"),
@@ -60,10 +62,10 @@ const elements = {
   customAliasVisibility: document.querySelector("#custom-alias-visibility"),
   aliasHint: document.querySelector("#alias-hint"),
   keepLabel: document.querySelector("#keep-label"),
-  rememberImportedPinEnabled: document.querySelector("#remember-imported-pin-enabled"),
   rememberImportedPinField: document.querySelector("#remember-imported-pin-field"),
   rememberImportedPin: document.querySelector("#remember-imported-pin"),
-  rememberImportedPinWarning: document.querySelector("#remember-imported-pin-warning"),
+  rememberImportedPinVisibility: document.querySelector("#remember-imported-pin-visibility"),
+  rememberImportedPinHelp: document.querySelector("#remember-imported-pin-help"),
   importSubmit: document.querySelector("#import-submit"),
   importStatus: document.querySelector("#import-status"),
   importResult: document.querySelector("#import-result"),
@@ -111,6 +113,10 @@ const SAVED_PROFILE_INTRO_CLOSE_DELAY_MS = 2000;
 const AUTH_PANEL_SCROLL_BOTTOM_OFFSET = 36;
 const AUTH_PANEL_SCROLL_TOP_FALLBACK_OFFSET = 18;
 const AUTH_PANEL_SCROLL_HIGHLIGHT_MS = 2000;
+const VAULT_MODE_FADE_OUT_MS = 120;
+const VAULT_MODE_ANIMATION_MS = 380;
+const PROFILE_PIN_MIN_LENGTH = 3;
+const PROFILE_PIN_MAX_LENGTH = 6;
 const PIN_KDF_ITERATIONS = 260_000;
 const PROFILE_PIN_SALT_PREFIX = "SGO saved profile PIN v1";
 const PROFILE_PIN_AAD = new TextEncoder().encode("SGO saved profile access code v1");
@@ -155,9 +161,9 @@ const LAVA_LAYER_SETTINGS = [
 
 const TRANSLATIONS = {
   ru: {
-    "meta.title": "SteamGuardOnline - Online Steam Desktop Authenticator",
+    "meta.title": "SteamGuardOnline - Online Steam Guard Authenticator",
     "meta.description":
-      "Open-source online Steam Desktop Authenticator для безопасного получения Steam Guard-кодов по секретному ID без логина и пароля Steam.",
+      "Open-source online Steam Guard Authenticator для безопасного получения Steam Guard-кодов по секретному ID без логина и пароля Steam.",
     "language.label": "Язык",
     "language.aria": "Язык сайта",
     "brand.homeAria": "SGO (SteamGuardOnline) - на главную",
@@ -166,7 +172,7 @@ const TRANSLATIONS = {
     "service.checking": "Проверка API…",
     "service.ready": "API и KV готовы",
     "service.warning": "Требуется настройка KV",
-    "hero.eyebrow": "<span></span> Online Steam Desktop Authenticator",
+    "hero.eyebrow": "<span></span> Online Steam Guard Authenticator",
     "hero.title": "Steam Guard-коды<br /><em>на любом устройстве</em>",
     "hero.lead":
       "Загрузите maFile один раз, сохраните 16-символьный ID и открывайте актуальный код Steam Guard с другого компьютера или телефона. Логин и пароль Steam не нужны.",
@@ -203,11 +209,10 @@ const TRANSLATIONS = {
     "profiles.clearConfirm": "Удалить все сохранённые профили из хранилища этого браузера?",
     "profiles.rememberTitle": "Запомнить профиль на этом устройстве",
     "profiles.rememberHelp": "Профиль сохранится в хранилище этого браузера без срока окончания. PIN-защищённые профили запросят PIN при открытии.",
-    "profiles.pinEnabledTitle": "Защитить сохранённый профиль PIN-кодом",
-    "profiles.pinEnabledHelp": "Если PIN выключен, доступ к хранилищу браузера сможет открыть профиль без дополнительного секрета.",
     "profiles.pinLabel": "PIN-код профиля",
-    "profiles.pinPlaceholder": "3–6",
+    "profiles.pinPlaceholder": "1234",
     "profiles.pinHelp": "PIN необязателен, но с ним сохранённый профиль защищён от прямого использования данных браузерного хранилища. 5 неверных попыток удалят хранилище из KV.",
+    "profiles.pinTooShort": "PIN должен содержать минимум {min} символа.",
     "profiles.pinUnlockTitle": "Введите PIN для {label}",
     "profiles.pinUnlockHelp": "5 неверных попыток удалят связанное хранилище из KV.",
     "profiles.pinDisabledWarning": "PIN-защита выключена. Уровень безопасности ниже: при доступе к хранилищу браузера профиль можно будет открыть без PIN.",
@@ -249,7 +254,7 @@ const TRANSLATIONS = {
     "import.noFile": "Файлы не выбраны",
     "import.dropTitle": "Перетащите maFile сюда",
     "import.dropSubtitle": "или нажмите, чтобы выбрать один или несколько файлов",
-    "import.aliasLabelHtml": "Свой код доступа <span>необязательно</span>",
+    "import.aliasLabelHtml": "Свой код доступа",
     "import.aliasPlaceholder": "super_secret_code123",
     "import.keepLabelTitle": "Сохранить имя аккаунта",
     "import.keepLabelHelp": "Имя попадёт только внутрь зашифрованного контейнера.",
@@ -316,7 +321,7 @@ const TRANSLATIONS = {
       "Удалить зашифрованное хранилище из Cloudflare KV? Отменить это действие нельзя. Сохранённый локально maFile не изменится.",
     "manage.deleteSuccess": "Хранилище удалено из KV.",
     "manage.deleteError": "Не удалось удалить хранилище.",
-    "benefits.eyebrow": "<span></span> Почему SGO (SteamGuardOnline)",
+    "benefits.eyebrow": "<span></span> Почему SteamGuardOnline",
     "benefits.title": "Прозрачная защита.<br />Контроль на вашей стороне.",
     "benefits.openTitle": "Полностью open-source",
     "benefits.openText": "Клиентская криптография, Pages Function и схема хранения доступны для проверки и собственного deploy.",
@@ -394,9 +399,9 @@ const TRANSLATIONS = {
     "api.503": "Сервис временно недоступен или KV ещё настраивается.",
   },
   en: {
-    "meta.title": "SteamGuardOnline - Online Steam Desktop Authenticator",
+    "meta.title": "SteamGuardOnline - Online Steam Guard Authenticator",
     "meta.description":
-      "Open-source online Steam Desktop Authenticator for safely getting Steam Guard codes by secret ID without a Steam login or password.",
+      "Open-source online Steam Guard Authenticator for safely getting Steam Guard codes by secret ID without a Steam login or password.",
     "language.label": "Language",
     "language.aria": "Site language",
     "brand.homeAria": "SGO (SteamGuardOnline) - home",
@@ -405,7 +410,7 @@ const TRANSLATIONS = {
     "service.checking": "Checking API…",
     "service.ready": "API and KV ready",
     "service.warning": "KV setup required",
-    "hero.eyebrow": "<span></span> Online Steam Desktop Authenticator",
+    "hero.eyebrow": "<span></span> Online Steam Guard Authenticator",
     "hero.title": "Steam Guard codes<br /><em>on any device</em>",
     "hero.lead":
       "Upload a maFile once, save the 16-character ID, and open the current Steam Guard code from another computer or phone. No Steam login or password is needed.",
@@ -442,11 +447,10 @@ const TRANSLATIONS = {
     "profiles.clearConfirm": "Delete all saved profiles from this browser storage?",
     "profiles.rememberTitle": "Remember profile on this device",
     "profiles.rememberHelp": "The profile is saved in this browser storage without expiration. PIN-protected profiles ask for the PIN when opened.",
-    "profiles.pinEnabledTitle": "Protect the saved profile with a PIN",
-    "profiles.pinEnabledHelp": "If PIN is off, browser storage access can open the profile without an extra secret.",
     "profiles.pinLabel": "Profile PIN",
-    "profiles.pinPlaceholder": "3-6",
+    "profiles.pinPlaceholder": "1234",
     "profiles.pinHelp": "The PIN is optional, but it protects the saved profile from direct use of browser storage data. 5 wrong attempts delete the vault from KV.",
+    "profiles.pinTooShort": "PIN must contain at least {min} characters.",
     "profiles.pinUnlockTitle": "Enter PIN for {label}",
     "profiles.pinUnlockHelp": "5 wrong attempts delete the linked vault from KV.",
     "profiles.pinDisabledWarning": "PIN protection is off. Security is lower: if browser storage is accessed, the profile can be opened without a PIN.",
@@ -488,7 +492,7 @@ const TRANSLATIONS = {
     "import.noFile": "No files selected",
     "import.dropTitle": "Drop maFile here",
     "import.dropSubtitle": "or click to choose one or more files",
-    "import.aliasLabelHtml": "Your access code <span>optional</span>",
+    "import.aliasLabelHtml": "Your access code",
     "import.aliasPlaceholder": "super_secret_code123",
     "import.keepLabelTitle": "Save account name",
     "import.keepLabelHelp": "The name is stored only inside the encrypted container.",
@@ -552,7 +556,7 @@ const TRANSLATIONS = {
       "Delete the encrypted vault from Cloudflare KV? This cannot be undone. Your locally saved maFile will not change.",
     "manage.deleteSuccess": "Vault deleted from KV.",
     "manage.deleteError": "Could not delete the vault.",
-    "benefits.eyebrow": "<span></span> Why SGO (SteamGuardOnline)",
+    "benefits.eyebrow": "<span></span> Why SteamGuardOnline",
     "benefits.title": "Transparent protection.<br />Control stays with you.",
     "benefits.openTitle": "Fully open-source",
     "benefits.openText": "Client-side cryptography, Pages Function, and the storage model are available for review and self-deploy.",
@@ -676,11 +680,10 @@ const TRANSLATIONS = {
     "profiles.clearConfirm": "从此浏览器存储中删除所有已保存配置？",
     "profiles.rememberTitle": "在此设备记住配置",
     "profiles.rememberHelp": "配置会保存在此浏览器存储中且不设置过期时间。受 PIN 保护的配置在打开时会要求输入 PIN。",
-    "profiles.pinEnabledTitle": "用 PIN 保护保存的配置",
-    "profiles.pinEnabledHelp": "如果关闭 PIN，能访问浏览器存储的人可在没有额外 secret 的情况下打开配置。",
     "profiles.pinLabel": "配置 PIN",
-    "profiles.pinPlaceholder": "3–6",
+    "profiles.pinPlaceholder": "1234",
     "profiles.pinHelp": "PIN 是可选的，但可防止浏览器存储数据被直接使用。5 次错误尝试会从 KV 删除保险库。",
+    "profiles.pinTooShort": "PIN 至少需要 {min} 个字符。",
     "profiles.pinUnlockTitle": "输入 {label} 的 PIN",
     "profiles.pinUnlockHelp": "5 次错误尝试会从 KV 删除关联保险库。",
     "profiles.pinDisabledWarning": "PIN 保护已关闭。安全级别降低：浏览器存储被访问后，配置可在没有 PIN 的情况下打开。",
@@ -722,7 +725,7 @@ const TRANSLATIONS = {
     "import.noFile": "未选择文件",
     "import.dropTitle": "将 maFile 拖到这里",
     "import.dropSubtitle": "或点击选择一个或多个文件",
-    "import.aliasLabelHtml": "你的访问代码 <span>可选</span>",
+    "import.aliasLabelHtml": "你的访问代码",
     "import.aliasPlaceholder": "super_secret_code123",
     "import.keepLabelTitle": "保存账号名称",
     "import.keepLabelHelp": "名称只会保存在加密容器内。",
@@ -783,7 +786,7 @@ const TRANSLATIONS = {
     "manage.deleteConfirm": "从 Cloudflare KV 删除加密保险库？此操作无法撤销。本地保存的 maFile 不会改变。",
     "manage.deleteSuccess": "保险库已从 KV 删除。",
     "manage.deleteError": "无法删除保险库。",
-    "benefits.eyebrow": "<span></span> 为什么选择 SGO (SteamGuardOnline)",
+    "benefits.eyebrow": "<span></span> 为什么选择 SteamGuardOnline",
     "benefits.title": "透明保护。<br />控制权由你掌握。",
     "benefits.openTitle": "完全开源",
     "benefits.openText": "客户端加密、Pages Function 和存储模型都可审查，也可自行部署。",
@@ -900,11 +903,10 @@ const TRANSLATIONS = {
     "profiles.clearConfirm": "¿Eliminar todos los perfiles guardados del almacenamiento de este navegador?",
     "profiles.rememberTitle": "Recordar perfil en este dispositivo",
     "profiles.rememberHelp": "El perfil se guarda en el almacenamiento de este navegador sin caducidad. Los perfiles protegidos con PIN pedirán el PIN al abrirse.",
-    "profiles.pinEnabledTitle": "Proteger el perfil guardado con PIN",
-    "profiles.pinEnabledHelp": "Si el PIN está desactivado, el acceso al almacenamiento del navegador puede abrir el perfil sin un secreto adicional.",
     "profiles.pinLabel": "PIN del perfil",
-    "profiles.pinPlaceholder": "3-6",
+    "profiles.pinPlaceholder": "1234",
     "profiles.pinHelp": "El PIN es opcional, pero protege el perfil guardado contra el uso directo de los datos del almacenamiento del navegador. 5 intentos erróneos eliminan la bóveda de KV.",
+    "profiles.pinTooShort": "El PIN debe tener al menos {min} caracteres.",
     "profiles.pinUnlockTitle": "Introduce el PIN para {label}",
     "profiles.pinUnlockHelp": "5 intentos erróneos eliminan la bóveda vinculada de KV.",
     "profiles.pinDisabledWarning": "La protección con PIN está desactivada. La seguridad baja: si se accede al almacenamiento del navegador, el perfil podrá abrirse sin PIN.",
@@ -946,7 +948,7 @@ const TRANSLATIONS = {
     "import.noFile": "Ningún archivo seleccionado",
     "import.dropTitle": "Suelta el maFile aquí",
     "import.dropSubtitle": "o haz clic para elegir uno o varios archivos",
-    "import.aliasLabelHtml": "Tu código de acceso <span>opcional</span>",
+    "import.aliasLabelHtml": "Tu código de acceso",
     "import.aliasPlaceholder": "super_secret_code123",
     "import.keepLabelTitle": "Guardar nombre de cuenta",
     "import.keepLabelHelp": "El nombre solo se guarda dentro del contenedor cifrado.",
@@ -1006,7 +1008,7 @@ const TRANSLATIONS = {
     "manage.deleteConfirm": "¿Eliminar la bóveda cifrada de Cloudflare KV? No se puede deshacer. El maFile guardado localmente no cambiará.",
     "manage.deleteSuccess": "Bóveda eliminada de KV.",
     "manage.deleteError": "No se pudo eliminar la bóveda.",
-    "benefits.eyebrow": "<span></span> Por qué SGO (SteamGuardOnline)",
+    "benefits.eyebrow": "<span></span> Por qué SteamGuardOnline",
     "benefits.title": "Protección transparente.<br />El control queda en tus manos.",
     "benefits.openTitle": "Totalmente open-source",
     "benefits.openText": "La criptografía del cliente, Pages Function y el modelo de almacenamiento están disponibles para revisión y despliegue propio.",
@@ -1123,11 +1125,10 @@ const TRANSLATIONS = {
     "profiles.clearConfirm": "Excluir todos os perfis salvos do armazenamento deste navegador?",
     "profiles.rememberTitle": "Lembrar perfil neste dispositivo",
     "profiles.rememberHelp": "O perfil fica salvo no armazenamento deste navegador sem expiração. Perfis protegidos por PIN pedirão o PIN ao abrir.",
-    "profiles.pinEnabledTitle": "Proteger o perfil salvo com PIN",
-    "profiles.pinEnabledHelp": "Se o PIN ficar desativado, o acesso ao armazenamento do navegador poderá abrir o perfil sem um segredo adicional.",
     "profiles.pinLabel": "PIN do perfil",
-    "profiles.pinPlaceholder": "3-6",
+    "profiles.pinPlaceholder": "1234",
     "profiles.pinHelp": "O PIN é opcional, mas protege o perfil salvo contra o uso direto dos dados do armazenamento do navegador. 5 tentativas erradas excluem o cofre do KV.",
+    "profiles.pinTooShort": "O PIN deve ter pelo menos {min} caracteres.",
     "profiles.pinUnlockTitle": "Digite o PIN para {label}",
     "profiles.pinUnlockHelp": "5 tentativas erradas excluem o cofre vinculado do KV.",
     "profiles.pinDisabledWarning": "A proteção por PIN está desativada. A segurança fica menor: se o armazenamento do navegador for acessado, o perfil poderá ser aberto sem PIN.",
@@ -1169,7 +1170,7 @@ const TRANSLATIONS = {
     "import.noFile": "Nenhum arquivo selecionado",
     "import.dropTitle": "Solte o maFile aqui",
     "import.dropSubtitle": "ou clique para escolher um ou mais arquivos",
-    "import.aliasLabelHtml": "Seu código de acesso <span>opcional</span>",
+    "import.aliasLabelHtml": "Seu código de acesso",
     "import.aliasPlaceholder": "super_secret_code123",
     "import.keepLabelTitle": "Salvar nome da conta",
     "import.keepLabelHelp": "O nome fica apenas dentro do contêiner criptografado.",
@@ -1229,7 +1230,7 @@ const TRANSLATIONS = {
     "manage.deleteConfirm": "Excluir o cofre criptografado do Cloudflare KV? Não é possível desfazer. O maFile salvo localmente não será alterado.",
     "manage.deleteSuccess": "Cofre excluído do KV.",
     "manage.deleteError": "Não foi possível excluir o cofre.",
-    "benefits.eyebrow": "<span></span> Por que SGO (SteamGuardOnline)",
+    "benefits.eyebrow": "<span></span> Por que SteamGuardOnline",
     "benefits.title": "Proteção transparente.<br />O controle fica com você.",
     "benefits.openTitle": "Totalmente open-source",
     "benefits.openText": "A criptografia do cliente, Pages Function e o modelo de armazenamento estão disponíveis para revisão e deploy próprio.",
@@ -1327,6 +1328,7 @@ const state = {
   accountsMenuOpenMode: null,
   authPanelHighlightTimer: null,
   currentInfoPage: null,
+  vaultModeAnimation: null,
 };
 
 class ApiRequestError extends Error {
@@ -1641,6 +1643,8 @@ function applyTranslations() {
   setAccessKindBadge(state.accessKind || "primary");
   syncVisibilityToggle(elements.accessCode, elements.accessVisibility);
   syncVisibilityToggle(elements.customAlias, elements.customAliasVisibility);
+  syncVisibilityToggle(elements.savedProfilePin, elements.savedProfilePinVisibility);
+  syncVisibilityToggle(elements.rememberImportedPin, elements.rememberImportedPinVisibility);
 
   for (const button of document.querySelectorAll("[aria-busy='true'][data-busy-key]")) {
     setElementText(button, t(button.dataset.busyKey));
@@ -1713,7 +1717,11 @@ function safeProfileLabel(value) {
 
 function validateProfilePin(pin) {
   const value = String(pin ?? "");
-  if (!/^[\x21-\x7e]{3,6}$/.test(value)) {
+  if (
+    value.length < PROFILE_PIN_MIN_LENGTH ||
+    value.length > PROFILE_PIN_MAX_LENGTH ||
+    !/^[\x21-\x7e]+$/.test(value)
+  ) {
     return { ok: false, message: t("profiles.pinInvalid") };
   }
   return { ok: true, value };
@@ -2120,7 +2128,9 @@ function maskAccessCode(profile) {
 function hideSavedProfilePinPanel() {
   state.pendingSavedProfilePinIndex = null;
   elements.savedProfilePinPanel.hidden = true;
+  elements.savedProfilePin.type = "password";
   elements.savedProfilePin.value = "";
+  syncVisibilityToggle(elements.savedProfilePin, elements.savedProfilePinVisibility);
 }
 
 function updateSavedProfilePinPanel({ focus = false, clearValue = false } = {}) {
@@ -2140,6 +2150,7 @@ function updateSavedProfilePinPanel({ focus = false, clearValue = false } = {}) 
   elements.savedProfilePinTitle.textContent = t("profiles.pinUnlockTitle", { label });
   if (clearValue) elements.savedProfilePin.value = "";
   elements.savedProfilePinPanel.hidden = false;
+  syncVisibilityToggle(elements.savedProfilePin, elements.savedProfilePinVisibility);
   if (focus) elements.savedProfilePin.focus();
 }
 
@@ -2417,7 +2428,31 @@ function submitAccessCodeFromUrl() {
   }
 }
 
-function setVaultMode(mode) {
+function prefersReducedMotion() {
+  return Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+}
+
+function finishVaultModeAnimation() {
+  const animation = state.vaultModeAnimation;
+  if (!animation) return;
+
+  clearTimeout(animation.switchTimer);
+  clearTimeout(animation.finishTimer);
+  animation.card.classList.remove("is-switching-vault-mode");
+  animation.card.style.height = "";
+  animation.card.style.transition = "";
+
+  for (const panel of elements.vaultModePanels) {
+    const active = panel.dataset.vaultPanel === animation.mode;
+    panel.hidden = !active;
+    panel.classList.toggle("is-active", active);
+    panel.classList.remove("is-vault-panel-entering", "is-vault-panel-exiting");
+  }
+
+  state.vaultModeAnimation = null;
+}
+
+function showVaultModePanel(mode) {
   for (const button of elements.vaultModeButtons) {
     const active = button.dataset.vaultMode === mode;
     button.classList.toggle("is-active", active);
@@ -2425,8 +2460,77 @@ function setVaultMode(mode) {
   }
 
   for (const panel of elements.vaultModePanels) {
-    panel.hidden = panel.dataset.vaultPanel !== mode;
+    const active = panel.dataset.vaultPanel === mode;
+    panel.hidden = !active;
+    panel.classList.toggle("is-active", active);
   }
+}
+
+function animateVaultModePanel(currentPanel, nextPanel, mode) {
+  const card = elements.vaultCard;
+  if (!card) {
+    showVaultModePanel(mode);
+    return;
+  }
+
+  const startHeight = card.offsetHeight;
+  card.style.height = `${startHeight}px`;
+  card.classList.add("is-switching-vault-mode");
+  currentPanel.classList.add("is-vault-panel-exiting");
+  currentPanel.classList.remove("is-active");
+
+  const switchTimer = setTimeout(() => {
+    currentPanel.hidden = true;
+    currentPanel.classList.remove("is-vault-panel-exiting");
+
+    nextPanel.hidden = false;
+    nextPanel.classList.add("is-vault-panel-entering");
+    nextPanel.classList.remove("is-active");
+
+    card.style.transition = "none";
+    card.style.height = "auto";
+    const endHeight = card.offsetHeight;
+    card.style.height = `${startHeight}px`;
+    void card.offsetHeight;
+    card.style.transition = "";
+
+    requestAnimationFrame(() => {
+      card.style.height = `${endHeight}px`;
+      nextPanel.classList.add("is-active");
+      nextPanel.classList.remove("is-vault-panel-entering");
+    });
+  }, VAULT_MODE_FADE_OUT_MS);
+
+  const finishTimer = setTimeout(finishVaultModeAnimation, VAULT_MODE_FADE_OUT_MS + VAULT_MODE_ANIMATION_MS);
+  state.vaultModeAnimation = { card, currentPanel, nextPanel, mode, switchTimer, finishTimer };
+}
+
+function setVaultMode(mode, { animate = false } = {}) {
+  const nextPanel = elements.vaultModePanels.find((panel) => panel.dataset.vaultPanel === mode);
+  if (!nextPanel) return;
+
+  finishVaultModeAnimation();
+
+  const currentPanel = elements.vaultModePanels.find((panel) => !panel.hidden);
+  const shouldAnimate =
+    animate &&
+    currentPanel &&
+    currentPanel !== nextPanel &&
+    elements.vaultCard &&
+    !prefersReducedMotion();
+
+  for (const button of elements.vaultModeButtons) {
+    const active = button.dataset.vaultMode === mode;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-selected", String(active));
+  }
+
+  if (!shouldAnimate) {
+    showVaultModePanel(mode);
+    return;
+  }
+
+  animateVaultModePanel(currentPanel, nextPanel, mode);
 }
 
 function getInfoPageFromPath() {
@@ -2533,15 +2637,23 @@ function togglePasswordVisibility(input, button) {
 }
 
 function updateRememberPinState() {
-  const importPinEnabled = elements.rememberImportedPinEnabled.checked;
-  elements.rememberImportedPin.disabled = !importPinEnabled;
-  if (elements.rememberImportedPinField) elements.rememberImportedPinField.hidden = !importPinEnabled;
-  if (!importPinEnabled) elements.rememberImportedPin.value = "";
-  setStatus(
-    elements.rememberImportedPinWarning,
-    !importPinEnabled ? t("profiles.pinDisabledWarning") : "",
-    "warning",
-  );
+  const pin = elements.rememberImportedPin.value;
+  elements.rememberImportedPin.disabled = false;
+  if (elements.rememberImportedPinField) elements.rememberImportedPinField.hidden = false;
+  if (elements.rememberImportedPinHelp) {
+    if (!pin) {
+      elements.rememberImportedPinHelp.textContent = t("profiles.pinHelp");
+      elements.rememberImportedPinHelp.dataset.kind = "warning";
+    } else if (pin.length < PROFILE_PIN_MIN_LENGTH) {
+      elements.rememberImportedPinHelp.textContent = t("profiles.pinTooShort", { min: PROFILE_PIN_MIN_LENGTH });
+      elements.rememberImportedPinHelp.dataset.kind = "error";
+    } else {
+      const validation = validateProfilePin(pin);
+      elements.rememberImportedPinHelp.textContent = validation.ok ? t("profiles.pinHelp") : validation.message;
+      elements.rememberImportedPinHelp.dataset.kind = validation.ok ? "success" : "error";
+    }
+  }
+  syncVisibilityToggle(elements.rememberImportedPin, elements.rememberImportedPinVisibility);
 }
 
 function setBusy(button, busy, busyKey = "busy.processing") {
@@ -3074,9 +3186,10 @@ async function handleImportSubmit(event) {
   }
 
   let profilePin = null;
-  const useProfilePin = elements.rememberImportedPinEnabled.checked;
+  const profilePinValue = elements.rememberImportedPin.value;
+  const useProfilePin = profilePinValue.length > 0;
   if (useProfilePin) {
-    const pinValidation = validateProfilePin(elements.rememberImportedPin.value);
+    const pinValidation = validateProfilePin(profilePinValue);
     if (!pinValidation.ok) {
       setStatus(elements.importStatus, pinValidation.message, "error");
       elements.rememberImportedPin.focus();
@@ -3239,7 +3352,7 @@ async function checkService() {
 }
 
 for (const button of elements.vaultModeButtons) {
-  button.addEventListener("click", () => setVaultMode(button.dataset.vaultMode));
+  button.addEventListener("click", () => setVaultMode(button.dataset.vaultMode, { animate: true }));
 }
 
 elements.flowToggle?.addEventListener("click", toggleFlowDetails);
@@ -3267,7 +3380,7 @@ elements.accessForm.addEventListener("submit", handleAccessSubmit);
 elements.importForm.addEventListener("submit", handleImportSubmit);
 elements.aliasForm.addEventListener("submit", handleAliasSubmit);
 elements.customAlias.addEventListener("input", updateAliasHint);
-elements.rememberImportedPinEnabled.addEventListener("change", updateRememberPinState);
+elements.rememberImportedPin.addEventListener("input", updateRememberPinState);
 elements.accountsMenuButton?.addEventListener("click", (event) => {
   if (state.savedProfiles.length === 0) {
     event.currentTarget.blur();
@@ -3435,6 +3548,12 @@ elements.accessVisibility.addEventListener("click", () =>
 elements.customAliasVisibility.addEventListener("click", () =>
   togglePasswordVisibility(elements.customAlias, elements.customAliasVisibility),
 );
+elements.savedProfilePinVisibility.addEventListener("click", () =>
+  togglePasswordVisibility(elements.savedProfilePin, elements.savedProfilePinVisibility),
+);
+elements.rememberImportedPinVisibility.addEventListener("click", () =>
+  togglePasswordVisibility(elements.rememberImportedPin, elements.rememberImportedPinVisibility),
+);
 
 elements.importResultList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-copy-value]");
@@ -3466,7 +3585,7 @@ currentLanguage = getInitialLanguage();
 mountSavedProfilesMenu();
 state.savedProfiles = loadSavedProfilesFromStorage();
 elements.year.textContent = new Date().getFullYear();
-setVaultMode("access");
+setVaultMode("access", { animate: false });
 setSelectedFiles([]);
 applyRouteLayout();
 applyTranslations();

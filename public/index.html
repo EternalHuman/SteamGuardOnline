@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Open-source online Steam Desktop Authenticator для безопасного получения Steam Guard-кодов по секретному ID без логина и пароля Steam."
+      content="Open-source online Steam Guard Authenticator для безопасного получения Steam Guard-кодов по секретному ID без логина и пароля Steam."
     />
     <meta name="theme-color" content="#0b1018" />
-    <title>SteamGuardOnline - Online Steam Desktop Authenticator</title>
+    <title>SteamGuardOnline - Online Steam Guard Authenticator</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/app.js"></script>
@@ -67,7 +67,7 @@
       <main class="site-main">
         <section class="hero section-shell" data-home-section>
         <div class="hero-copy">
-          <div class="eyebrow" data-i18n-html="hero.eyebrow"><span></span> Online Steam Desktop Authenticator</div>
+          <div class="eyebrow" data-i18n-html="hero.eyebrow"><span></span> Online Steam Guard Authenticator</div>
           <h1 data-i18n-html="hero.title">Steam Guard-коды<br /><em>на любом устройстве</em></h1>
           <p class="hero-lead" data-i18n="hero.lead">
             Загрузите maFile один раз, сохраните 16-символьный ID и открывайте актуальный код Steam Guard с другого
@@ -156,15 +156,29 @@
                 <strong id="saved-profile-pin-title">Введите PIN</strong>
                 <div>
                   <label class="field-label" for="saved-profile-pin" data-i18n="profiles.pinLabel">PIN-код профиля</label>
-                  <input
-                    id="saved-profile-pin"
-                    type="password"
-                    inputmode="text"
-                    autocomplete="off"
-                    maxlength="6"
-                    placeholder="3–6"
-                    data-i18n-attr="placeholder:profiles.pinPlaceholder"
-                  />
+                  <div class="input-with-action pin-input-with-action">
+                    <input
+                      id="saved-profile-pin"
+                      type="password"
+                      inputmode="text"
+                      autocomplete="off"
+                      maxlength="6"
+                      placeholder="1234"
+                      data-i18n-attr="placeholder:profiles.pinPlaceholder"
+                    />
+                    <button id="saved-profile-pin-visibility" class="inline-button visibility-toggle" type="button" aria-pressed="false" aria-label="Показать" title="Показать" data-i18n-attr="aria-label:action.show;title:action.show">
+                      <svg class="visibility-icon" data-visibility-icon="show" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                      <svg class="visibility-icon" data-visibility-icon="hide" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                        <path d="M3 3l18 18" />
+                        <path d="M10.6 10.6A3 3 0 0 0 13.4 13.4" />
+                        <path d="M9.1 5.4A10.7 10.7 0 0 1 12 5c6 0 9.5 7 9.5 7a16.3 16.3 0 0 1-3 3.8" />
+                        <path d="M6.5 6.8C3.9 8.6 2.5 12 2.5 12s3.5 7 9.5 7a10.2 10.2 0 0 0 4.5-1" />
+                      </svg>
+                    </button>
+                  </div>
                   <p class="field-help" data-i18n="profiles.pinUnlockHelp">5 неверных попыток удалят связанное хранилище из KV.</p>
                 </div>
                 <div class="saved-profile-pin-actions">
@@ -193,7 +207,7 @@
               </div>
 
               <div>
-                <label class="field-label" for="custom-alias" data-i18n-html="import.aliasLabelHtml">Свой код доступа <span>необязательно</span></label>
+                <label class="field-label" for="custom-alias" data-i18n-html="import.aliasLabelHtml">Свой код доступа</label>
                 <div class="input-with-action">
                   <input
                     id="custom-alias"
@@ -221,6 +235,34 @@
                 <p id="alias-hint" class="field-help"></p>
               </div>
 
+              <div id="remember-imported-pin-field">
+                <label class="field-label" for="remember-imported-pin" data-i18n="profiles.pinLabel">PIN-код профиля</label>
+                <div class="input-with-action pin-input-with-action">
+                  <input
+                    id="remember-imported-pin"
+                    type="password"
+                    inputmode="text"
+                    autocomplete="new-password"
+                    maxlength="6"
+                    placeholder="1234"
+                    data-i18n-attr="placeholder:profiles.pinPlaceholder"
+                  />
+                  <button id="remember-imported-pin-visibility" class="inline-button visibility-toggle" type="button" aria-pressed="false" aria-label="Показать" title="Показать" data-i18n-attr="aria-label:action.show;title:action.show">
+                    <svg class="visibility-icon" data-visibility-icon="show" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg class="visibility-icon" data-visibility-icon="hide" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                      <path d="M3 3l18 18" />
+                      <path d="M10.6 10.6A3 3 0 0 0 13.4 13.4" />
+                      <path d="M9.1 5.4A10.7 10.7 0 0 1 12 5c6 0 9.5 7 9.5 7a16.3 16.3 0 0 1-3 3.8" />
+                      <path d="M6.5 6.8C3.9 8.6 2.5 12 2.5 12s3.5 7 9.5 7a10.2 10.2 0 0 0 4.5-1" />
+                    </svg>
+                  </button>
+                </div>
+                <p id="remember-imported-pin-help" class="field-help" data-kind="warning" data-i18n="profiles.pinHelp">PIN необязателен, но с ним сохранённый профиль защищён от прямого использования данных браузерного хранилища. 5 неверных попыток удалят хранилище из KV.</p>
+              </div>
+
               <label class="check-row" for="keep-label">
                 <input id="keep-label" type="checkbox" checked />
                 <span class="custom-check" aria-hidden="true"></span>
@@ -229,29 +271,6 @@
                   <small data-i18n="import.keepLabelHelp">Имя попадёт только внутрь зашифрованного контейнера.</small>
                 </span>
               </label>
-
-              <label class="check-row" for="remember-imported-pin-enabled">
-                <input id="remember-imported-pin-enabled" type="checkbox" checked />
-                <span class="custom-check" aria-hidden="true"></span>
-                <span>
-                  <strong data-i18n="profiles.pinEnabledTitle">Защитить сохранённый профиль PIN-кодом</strong>
-                  <small data-i18n="profiles.pinEnabledHelp">Если PIN выключен, украденная cookie сможет открыть профиль без дополнительного секрета.</small>
-                </span>
-              </label>
-              <p id="remember-imported-pin-warning" class="form-status" hidden aria-live="polite"></p>
-              <div id="remember-imported-pin-field">
-                <label class="field-label" for="remember-imported-pin" data-i18n="profiles.pinLabel">PIN-код профиля</label>
-                <input
-                  id="remember-imported-pin"
-                  type="password"
-                  inputmode="text"
-                  autocomplete="new-password"
-                  maxlength="6"
-                  placeholder="3–6"
-                  data-i18n-attr="placeholder:profiles.pinPlaceholder"
-                />
-                <p class="field-help" data-i18n="profiles.pinHelp">PIN необязателен, но с ним сохранённый профиль защищён от прямого использования украденной cookie. 5 неверных попыток удалят хранилище из KV.</p>
-              </div>
 
               <div class="security-callout">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.2 8.7 8 11 4.8-2.3 8-6 8-11V6l-8-3Z" /><path d="M9 12l2 2 4-5" /></svg>
@@ -603,7 +622,7 @@
 
       <section class="benefits section-shell" aria-labelledby="benefits-title" data-home-section>
         <div class="section-heading">
-          <span class="eyebrow" data-i18n-html="benefits.eyebrow"><span></span> Почему SGO (SteamGuardOnline)</span>
+          <span class="eyebrow" data-i18n-html="benefits.eyebrow"><span></span> Почему SteamGuardOnline</span>
           <h2 id="benefits-title" data-i18n-html="benefits.title">Прозрачная защита.<br />Контроль на вашей стороне.</h2>
         </div>
 
