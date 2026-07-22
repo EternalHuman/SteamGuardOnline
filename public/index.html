@@ -330,6 +330,10 @@
                 <strong>Секреты</strong>
                 <p>API не принимает Steam-логин, пароль или полный maFile. В KV уходят только зашифрованный payload, lookup token и обёрнутые ключи.</p>
               </div>
+              <div class="api-info-card">
+                <strong>Лимиты</strong>
+                <p>JSON body - до <code>24 KB</code>. Rate limits считаются по IP за минуту: <code>/api/import</code> и <code>/api/save-saved</code> - 50, <code>/api/lookup</code> - 20, <code>/api/open-saved</code> - 10, <code>/api/alias</code> - 8, <code>/api/delete</code> и <code>/api/delete-saved</code> - 5. При превышении API вернёт <code>429</code> и <code>Retry-After: 60</code>. В интерфейсе за одну загрузку можно выбрать до <code>50</code> maFile.</p>
+              </div>
             </div>
 
             <div class="api-detail-list">
