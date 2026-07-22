@@ -3393,7 +3393,7 @@ elements.accountsMenuButton?.addEventListener("click", (event) => {
   }
   setAccountsMenuOpen(true, "click");
 });
-elements.accountsMenu?.addEventListener("mouseenter", () => {
+elements.accountsMenuButton?.addEventListener("mouseenter", () => {
   if (state.accountsMenuOpenMode === "click") return;
   setAccountsMenuOpen(true, "hover");
 });
