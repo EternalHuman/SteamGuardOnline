@@ -85,8 +85,11 @@ const DEFAULT_LANGUAGE = "ru";
 const LANGUAGE_STORAGE_KEY = "sda-vault-language";
 const PROFILE_STORAGE_KEY = "sgo_saved_profiles_v1";
 const PROFILE_COOKIE_NAME = "sgo_saved_profiles_v1";
+const PROFILE_COOKIE_CHUNK_PREFIX = `${PROFILE_COOKIE_NAME}_chunk_`;
+const PROFILE_COOKIE_CHUNK_COUNT_NAME = `${PROFILE_COOKIE_NAME}_chunk_count`;
 const PROFILE_COOKIE_EXPIRES = "Fri, 31 Dec 9999 23:59:59 GMT";
 const PROFILE_COOKIE_MAX_BYTES = 3500;
+const PROFILE_COOKIE_MAX_CHUNKS = 20;
 const IMPORT_FILE_LIMIT = 50;
 const SAVED_PROFILE_LIMIT = 50;
 const SAVED_PROFILE_MAX_PIN_ATTEMPTS = 5;
@@ -170,6 +173,7 @@ const TRANSLATIONS = {
     "profiles.noPinShort": "без PIN",
     "profiles.deviceSecretMissing": "Профиль без PIN повреждён или создан в другом браузере.",
     "profiles.saved": "Профиль сохранён на этом устройстве.",
+    "profiles.savedCount": "Сохранено профилей: {count}.",
     "profiles.removed": "Профиль удалён.",
     "profiles.cleared": "Сохранённые профили очищены.",
     "profiles.saveError": "Не удалось сохранить профиль.",
@@ -401,6 +405,7 @@ const TRANSLATIONS = {
     "profiles.noPinShort": "no PIN",
     "profiles.deviceSecretMissing": "This no-PIN profile is damaged or was created in another browser.",
     "profiles.saved": "Profile saved on this device.",
+    "profiles.savedCount": "Saved profiles: {count}.",
     "profiles.removed": "Profile removed.",
     "profiles.cleared": "Saved profiles cleared.",
     "profiles.saveError": "Could not save the profile.",
@@ -627,6 +632,7 @@ const TRANSLATIONS = {
     "profiles.noPinShort": "无 PIN",
     "profiles.deviceSecretMissing": "此无 PIN 配置已损坏，或是在另一个浏览器中创建的。",
     "profiles.saved": "配置已保存在此设备上。",
+    "profiles.savedCount": "已保存配置：{count}。",
     "profiles.removed": "配置已删除。",
     "profiles.cleared": "已保存的配置已清空。",
     "profiles.saveError": "无法保存配置。",
@@ -843,6 +849,7 @@ const TRANSLATIONS = {
     "profiles.noPinShort": "sin PIN",
     "profiles.deviceSecretMissing": "Este perfil sin PIN está dañado o se creó en otro navegador.",
     "profiles.saved": "Perfil guardado en este dispositivo.",
+    "profiles.savedCount": "Perfiles guardados: {count}.",
     "profiles.removed": "Perfil eliminado.",
     "profiles.cleared": "Perfiles guardados eliminados.",
     "profiles.saveError": "No se pudo guardar el perfil.",
@@ -1058,6 +1065,7 @@ const TRANSLATIONS = {
     "profiles.noPinShort": "sem PIN",
     "profiles.deviceSecretMissing": "Este perfil sem PIN está danificado ou foi criado em outro navegador.",
     "profiles.saved": "Perfil salvo neste dispositivo.",
+    "profiles.savedCount": "Perfis salvos: {count}.",
     "profiles.removed": "Perfil removido.",
     "profiles.cleared": "Perfis salvos limpos.",
     "profiles.saveError": "Não foi possível salvar o perfil.",
@@ -1399,8 +1407,16 @@ function readCookie(name) {
   return "";
 }
 
+function expireCookie(name) {
+  document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax${cookieSecureAttribute()}`;
+}
+
 function deleteProfileCookie() {
-  document.cookie = `${PROFILE_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax${cookieSecureAttribute()}`;
+  expireCookie(PROFILE_COOKIE_NAME);
+  expireCookie(PROFILE_COOKIE_CHUNK_COUNT_NAME);
+  for (let index = 0; index < PROFILE_COOKIE_MAX_CHUNKS; index += 1) {
+    expireCookie(`${PROFILE_COOKIE_CHUNK_PREFIX}${index}`);
+  }
 }
 
 function deleteSavedProfileStorage() {
@@ -1592,40 +1608,56 @@ function dedupeSavedProfiles(profiles) {
   return result;
 }
 
-function loadSavedProfilesFromCookie() {
-  const raw = readCookie(PROFILE_COOKIE_NAME);
+function parseSavedProfileCollection(raw) {
   if (!raw) return [];
 
+  let parsed;
   try {
-    const parsed = JSON.parse(raw);
-    const items = Array.isArray(parsed) ? parsed : parsed?.profiles;
-    if (!Array.isArray(items)) return [];
-
-    return dedupeSavedProfiles(
-      items
-        .map(normalizeSavedProfile)
-        .filter(Boolean)
-        .sort((left, right) => right.t - left.t),
-    ).slice(0, SAVED_PROFILE_LIMIT);
+    parsed = JSON.parse(raw);
   } catch {
-    return [];
+    try {
+      parsed = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(fromBase64Url(raw)));
+    } catch {
+      return [];
+    }
   }
+
+  const items = Array.isArray(parsed) ? parsed : parsed?.profiles;
+  if (!Array.isArray(items)) return [];
+
+  return dedupeSavedProfiles(
+    items
+      .map(normalizeSavedProfile)
+      .filter(Boolean)
+      .sort((left, right) => right.t - left.t),
+  ).slice(0, SAVED_PROFILE_LIMIT);
+}
+
+function loadSavedProfilesFromCookie() {
+  const chunkCount = Number(readCookie(PROFILE_COOKIE_CHUNK_COUNT_NAME));
+  if (Number.isInteger(chunkCount) && chunkCount > 0 && chunkCount <= PROFILE_COOKIE_MAX_CHUNKS) {
+    let payload = "";
+    for (let index = 0; index < chunkCount; index += 1) {
+      const chunk = readCookie(`${PROFILE_COOKIE_CHUNK_PREFIX}${index}`);
+      if (!chunk) {
+        payload = "";
+        break;
+      }
+      payload += chunk;
+    }
+
+    const chunkedProfiles = parseSavedProfileCollection(payload);
+    if (chunkedProfiles.length) return chunkedProfiles;
+  }
+
+  return parseSavedProfileCollection(readCookie(PROFILE_COOKIE_NAME));
 }
 
 function loadSavedProfilesFromStorage() {
   try {
     const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw);
-      const items = Array.isArray(parsed) ? parsed : parsed?.profiles;
-      if (Array.isArray(items)) {
-        return dedupeSavedProfiles(
-          items
-            .map(normalizeSavedProfile)
-            .filter(Boolean)
-            .sort((left, right) => right.t - left.t),
-        ).slice(0, SAVED_PROFILE_LIMIT);
-      }
+      return parseSavedProfileCollection(raw);
     }
   } catch {
     // Fall back to the legacy cookie below.
@@ -1647,17 +1679,33 @@ function writeSavedProfilesToCookie(profiles) {
     return [];
   }
 
-  while (normalized.length) {
-    const encoded = encodeURIComponent(JSON.stringify(normalized));
-    if (encoded.length <= PROFILE_COOKIE_MAX_BYTES) {
-      document.cookie = `${PROFILE_COOKIE_NAME}=${encoded}; ${profileCookieAttributes()}`;
-      return normalized;
+  const serialized = toBase64Url(new TextEncoder().encode(JSON.stringify(normalized)));
+  if (serialized.length <= PROFILE_COOKIE_MAX_BYTES) {
+    document.cookie = `${PROFILE_COOKIE_NAME}=${serialized}; ${profileCookieAttributes()}`;
+    expireCookie(PROFILE_COOKIE_CHUNK_COUNT_NAME);
+    for (let index = 0; index < PROFILE_COOKIE_MAX_CHUNKS; index += 1) {
+      expireCookie(`${PROFILE_COOKIE_CHUNK_PREFIX}${index}`);
     }
-    normalized.pop();
+    return normalized;
   }
 
-  deleteProfileCookie();
-  return [];
+  const chunks = [];
+  for (let offset = 0; offset < serialized.length; offset += PROFILE_COOKIE_MAX_BYTES) {
+    chunks.push(serialized.slice(offset, offset + PROFILE_COOKIE_MAX_BYTES));
+  }
+  if (chunks.length > PROFILE_COOKIE_MAX_CHUNKS) {
+    throw new Error(t("profiles.saveError"));
+  }
+
+  expireCookie(PROFILE_COOKIE_NAME);
+  document.cookie = `${PROFILE_COOKIE_CHUNK_COUNT_NAME}=${chunks.length}; ${profileCookieAttributes()}`;
+  chunks.forEach((chunk, index) => {
+    document.cookie = `${PROFILE_COOKIE_CHUNK_PREFIX}${index}=${chunk}; ${profileCookieAttributes()}`;
+  });
+  for (let index = chunks.length; index < PROFILE_COOKIE_MAX_CHUNKS; index += 1) {
+    expireCookie(`${PROFILE_COOKIE_CHUNK_PREFIX}${index}`);
+  }
+  return normalized;
 }
 
 function writeSavedProfilesToStorage(profiles) {
@@ -2682,6 +2730,8 @@ async function handleImportSubmit(event) {
     );
     const activeSavedProfileId =
       rememberedProfiles.find((profile) => profile.r && profile.r === activeResult.recordId)?.id || null;
+    setVaultMode("access");
+    setStatus(elements.savedProfileStatus, t("profiles.savedCount", { count: rememberedProfiles.length }), "success");
 
     for (const result of inactiveResults) {
       if (result.dataKey instanceof Uint8Array) result.dataKey.fill(0);
