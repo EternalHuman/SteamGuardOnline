@@ -21,8 +21,14 @@ import {
 } from "./crypto.js";
 
 const elements = {
+  pageGlows: [...document.querySelectorAll(".page-glow")],
   languageSelect: document.querySelector("#language-select"),
   homeSections: [...document.querySelectorAll("[data-home-section]")],
+  accountsMenu: document.querySelector("#accounts-menu"),
+  accountsMenuButton: document.querySelector("#accounts-menu-button"),
+  accountsDropdown: document.querySelector(".accounts-dropdown"),
+  savedProfilesCount: document.querySelector("#saved-profiles-count"),
+  savedProfilesSiteSlot: document.querySelector("#saved-profiles-site-slot"),
   vaultModeButtons: [...document.querySelectorAll("[data-vault-mode]")],
   vaultModePanels: [...document.querySelectorAll("[data-vault-panel]")],
   siteTabButtons: [...document.querySelectorAll("[data-site-tab]")],
@@ -37,6 +43,8 @@ const elements = {
   accessVisibility: document.querySelector("#access-visibility"),
   savedProfiles: document.querySelector("#saved-profiles"),
   savedProfileList: document.querySelector("#saved-profile-list"),
+  savedProfileSearch: document.querySelector("#saved-profile-search"),
+  savedProfileSearchInput: document.querySelector("#saved-profile-search-input"),
   savedProfilePinPanel: document.querySelector("#saved-profile-pin-panel"),
   savedProfilePinTitle: document.querySelector("#saved-profile-pin-title"),
   savedProfilePin: document.querySelector("#saved-profile-pin"),
@@ -81,7 +89,7 @@ const elements = {
   year: document.querySelector("#year"),
 };
 
-const DEFAULT_LANGUAGE = "ru";
+const DEFAULT_LANGUAGE = "en";
 const LANGUAGE_STORAGE_KEY = "sda-vault-language";
 const PROFILE_STORAGE_KEY = "sgo_saved_profiles_v1";
 const PROFILE_COOKIE_NAME = "sgo_saved_profiles_v1";
@@ -96,6 +104,13 @@ const SAVED_PROFILE_MAX_PIN_ATTEMPTS = 5;
 const SAVED_PROFILE_ID_BYTES = 18;
 const SAVED_PROFILE_DEVICE_SECRET_BYTES = 32;
 const SAVED_PROFILE_RECORD_ID_LENGTH = 24;
+const SAVED_PROFILE_INTRO_STAGGER_MS = 55;
+const SAVED_PROFILE_INTRO_MAX_STAGGER_MS = 480;
+const SAVED_PROFILE_INTRO_ANIMATION_MS = 1000;
+const SAVED_PROFILE_INTRO_CLOSE_DELAY_MS = 2000;
+const AUTH_PANEL_SCROLL_BOTTOM_OFFSET = 36;
+const AUTH_PANEL_SCROLL_TOP_FALLBACK_OFFSET = 18;
+const AUTH_PANEL_SCROLL_HIGHLIGHT_MS = 2000;
 const PIN_KDF_ITERATIONS = 260_000;
 const PROFILE_PIN_SALT_PREFIX = "SGO saved profile PIN v1";
 const PROFILE_PIN_AAD = new TextEncoder().encode("SGO saved profile access code v1");
@@ -107,9 +122,36 @@ const LANGUAGE_META = {
   es: { htmlLang: "es" },
   "pt-BR": { htmlLang: "pt-BR" },
 };
+const LANGUAGE_GROUP_FALLBACKS = {
+  be: "ru",
+  kk: "ru",
+  ky: "ru",
+  tg: "ru",
+  uk: "ru",
+  uz: "ru",
+  zh: "zh-CN",
+  pt: "pt-BR",
+};
 const INFO_PAGE_BY_PATH = new Map([
   ["/api", "api"],
 ]);
+const LAVA_PARALLAX_FACTOR = 0.14;
+const LAVA_LAYER_SETTINGS = [
+  {
+    elementIndex: 0,
+    delayVar: "--lava-delay-one",
+    duration: 30,
+    seedXVar: "--lava-seed-x-one",
+    seedYVar: "--lava-seed-y-one",
+  },
+  {
+    elementIndex: 1,
+    delayVar: "--lava-delay-two",
+    duration: 38,
+    seedXVar: "--lava-seed-x-two",
+    seedYVar: "--lava-seed-y-two",
+  },
+];
 
 const TRANSLATIONS = {
   ru: {
@@ -146,10 +188,15 @@ const TRANSLATIONS = {
     "access.submit": "Открыть authenticator",
     "access.openSuccess": "Хранилище расшифровано локально в браузере.",
     "access.openError": "Не удалось открыть хранилище.",
-    "profiles.title": "Сохранённые профили",
+    "profiles.title": "Сохранённые аккаунты",
+    "profiles.menuButton": "Аккаунты",
+    "profiles.menuButtonAria": "Аккаунты: {count}",
+    "profiles.searchLabel": "Поиск аккаунта",
+    "profiles.searchPlaceholder": "Поиск по нику",
     "profiles.empty": "Сохранённых профилей пока нет.",
     "profiles.open": "Открыть",
     "profiles.remove": "Удалить",
+    "profiles.dragHandle": "Перетащить профиль",
     "profiles.moveUp": "Поднять профиль",
     "profiles.moveDown": "Опустить профиль",
     "profiles.clear": "Очистить",
@@ -380,10 +427,15 @@ const TRANSLATIONS = {
     "access.submit": "Open authenticator",
     "access.openSuccess": "Vault decrypted locally in the browser.",
     "access.openError": "Could not open the vault.",
-    "profiles.title": "Saved profiles",
+    "profiles.title": "Saved accounts",
+    "profiles.menuButton": "Accounts",
+    "profiles.menuButtonAria": "Accounts: {count}",
+    "profiles.searchLabel": "Search account",
+    "profiles.searchPlaceholder": "Search by nickname",
     "profiles.empty": "No saved profiles yet.",
     "profiles.open": "Open",
     "profiles.remove": "Remove",
+    "profiles.dragHandle": "Drag profile",
     "profiles.moveUp": "Move profile up",
     "profiles.moveDown": "Move profile down",
     "profiles.clear": "Clear",
@@ -609,10 +661,15 @@ const TRANSLATIONS = {
     "access.submit": "打开 authenticator",
     "access.openSuccess": "保险库已在浏览器本地解密。",
     "access.openError": "无法打开保险库。",
-    "profiles.title": "已保存的配置",
+    "profiles.title": "已保存账号",
+    "profiles.menuButton": "账号",
+    "profiles.menuButtonAria": "账号：{count}",
+    "profiles.searchLabel": "搜索账号",
+    "profiles.searchPlaceholder": "按昵称搜索",
     "profiles.empty": "还没有保存的配置。",
     "profiles.open": "打开",
     "profiles.remove": "删除",
+    "profiles.dragHandle": "拖动配置",
     "profiles.moveUp": "上移配置",
     "profiles.moveDown": "下移配置",
     "profiles.clear": "清空",
@@ -828,10 +885,15 @@ const TRANSLATIONS = {
     "access.submit": "Abrir authenticator",
     "access.openSuccess": "Bóveda descifrada localmente en el navegador.",
     "access.openError": "No se pudo abrir la bóveda.",
-    "profiles.title": "Perfiles guardados",
+    "profiles.title": "Cuentas guardadas",
+    "profiles.menuButton": "Cuentas",
+    "profiles.menuButtonAria": "Cuentas: {count}",
+    "profiles.searchLabel": "Buscar cuenta",
+    "profiles.searchPlaceholder": "Buscar por apodo",
     "profiles.empty": "Aún no hay perfiles guardados.",
     "profiles.open": "Abrir",
     "profiles.remove": "Eliminar",
+    "profiles.dragHandle": "Arrastrar perfil",
     "profiles.moveUp": "Subir perfil",
     "profiles.moveDown": "Bajar perfil",
     "profiles.clear": "Limpiar",
@@ -1046,10 +1108,15 @@ const TRANSLATIONS = {
     "access.submit": "Abrir authenticator",
     "access.openSuccess": "Cofre descriptografado localmente no navegador.",
     "access.openError": "Não foi possível abrir o cofre.",
-    "profiles.title": "Perfis salvos",
+    "profiles.title": "Contas salvas",
+    "profiles.menuButton": "Contas",
+    "profiles.menuButtonAria": "Contas: {count}",
+    "profiles.searchLabel": "Pesquisar conta",
+    "profiles.searchPlaceholder": "Pesquisar por apelido",
     "profiles.empty": "Ainda não há perfis salvos.",
     "profiles.open": "Abrir",
     "profiles.remove": "Remover",
+    "profiles.dragHandle": "Arrastar perfil",
     "profiles.moveUp": "Mover perfil para cima",
     "profiles.moveDown": "Mover perfil para baixo",
     "profiles.clear": "Limpar",
@@ -1253,7 +1320,12 @@ const state = {
   serviceKind: "checking",
   toastTimer: null,
   savedProfiles: [],
+  savedProfileSearchQuery: "",
   pendingSavedProfilePinIndex: null,
+  draggedSavedProfileIndex: null,
+  savedProfileIntroTimer: null,
+  accountsMenuOpenMode: null,
+  authPanelHighlightTimer: null,
   currentInfoPage: null,
 };
 
@@ -1281,6 +1353,82 @@ function t(key, replacements = {}, fallback = key) {
   return interpolate(template, replacements);
 }
 
+function randomFloat(min, max) {
+  const range = max - min;
+  try {
+    if (globalThis.crypto?.getRandomValues) {
+      const bytes = new Uint32Array(1);
+      globalThis.crypto.getRandomValues(bytes);
+      return min + (bytes[0] / 0xffffffff) * range;
+    }
+  } catch {
+    // Math.random is good enough for purely visual jitter.
+  }
+  return min + Math.random() * range;
+}
+
+function setupLavaBackground() {
+  if (elements.pageGlows.length === 0) return;
+
+  const root = document.documentElement;
+  for (const layer of LAVA_LAYER_SETTINGS) {
+    const element = elements.pageGlows[layer.elementIndex];
+    if (!element) continue;
+
+    element.style.setProperty(layer.delayVar, `-${randomFloat(0, layer.duration).toFixed(2)}s`);
+    root.style.setProperty(layer.seedXVar, `${randomFloat(-5, 5).toFixed(2)}vw`);
+    root.style.setProperty(layer.seedYVar, `${randomFloat(-4, 4).toFixed(2)}vh`);
+  }
+
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+
+  let pendingFrame = false;
+  const updateParallax = () => {
+    pendingFrame = false;
+    const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    root.style.setProperty("--lava-scroll-y", `${(-scrollY * LAVA_PARALLAX_FACTOR).toFixed(1)}px`);
+  };
+  const scheduleParallax = () => {
+    if (pendingFrame) return;
+    pendingFrame = true;
+    window.requestAnimationFrame(updateParallax);
+  };
+
+  updateParallax();
+  window.addEventListener("scroll", scheduleParallax, { passive: true });
+  window.addEventListener("resize", scheduleParallax, { passive: true });
+}
+
+function resolveSupportedLanguage(language) {
+  const normalized = String(language || "").trim().replace(/_/g, "-");
+  if (!normalized) return null;
+  if (TRANSLATIONS[normalized]) return normalized;
+
+  const lower = normalized.toLowerCase();
+  const exact = Object.keys(TRANSLATIONS).find((key) => key.toLowerCase() === lower);
+  if (exact) return exact;
+
+  const base = lower.split("-")[0];
+  const direct = Object.keys(TRANSLATIONS).find((key) => key.toLowerCase() === base);
+  if (direct) return direct;
+  return LANGUAGE_GROUP_FALLBACKS[base] || null;
+}
+
+function getBrowserLanguage() {
+  if (typeof navigator === "undefined") return DEFAULT_LANGUAGE;
+  const browserLanguages = [
+    ...(Array.isArray(navigator.languages) ? navigator.languages : []),
+    navigator.language,
+    navigator.userLanguage,
+  ].filter(Boolean);
+
+  for (const language of browserLanguages) {
+    const supportedLanguage = resolveSupportedLanguage(language);
+    if (supportedLanguage) return supportedLanguage;
+  }
+  return DEFAULT_LANGUAGE;
+}
+
 function getInitialLanguage() {
   try {
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
@@ -1288,7 +1436,7 @@ function getInitialLanguage() {
   } catch {
     // Locale persistence is optional.
   }
-  return DEFAULT_LANGUAGE;
+  return getBrowserLanguage();
 }
 
 function setElementText(element, value) {
@@ -1298,6 +1446,127 @@ function setElementText(element, value) {
   } else {
     element.textContent = value;
   }
+}
+
+function mountSavedProfilesMenu() {
+  if (!elements.savedProfilesSiteSlot || !elements.savedProfiles) return;
+  elements.savedProfiles.classList.add("saved-profiles-menu-panel");
+  elements.savedProfilesSiteSlot.append(elements.savedProfiles);
+}
+
+function setAccountsMenuOpen(isOpen, mode = null) {
+  if (!elements.accountsMenu || !elements.accountsMenuButton) return;
+  const shouldOpen = Boolean(isOpen && state.savedProfiles.length > 0);
+  elements.accountsMenu.classList.toggle("is-open", shouldOpen);
+  elements.accountsMenuButton.setAttribute("aria-expanded", String(shouldOpen));
+  state.accountsMenuOpenMode = shouldOpen ? mode || state.accountsMenuOpenMode || "manual" : null;
+}
+
+function blurAccountsMenuFocus() {
+  const activeElement = document.activeElement;
+  if (activeElement instanceof HTMLElement && elements.accountsMenu?.contains(activeElement)) {
+    activeElement.blur();
+  }
+}
+
+function closeAccountsMenuAfterHoverSelection() {
+  if (state.accountsMenuOpenMode !== "hover") return;
+  setAccountsMenuOpen(false);
+  blurAccountsMenuFocus();
+}
+
+function updateSavedProfilesMenuState() {
+  const count = state.savedProfiles.length;
+  const hasAccounts = count > 0;
+  if (elements.savedProfilesCount) elements.savedProfilesCount.textContent = String(count);
+  if (elements.accountsMenu) elements.accountsMenu.classList.toggle("has-accounts", hasAccounts);
+  if (elements.accountsDropdown) elements.accountsDropdown.hidden = !hasAccounts;
+  if (!hasAccounts) setAccountsMenuOpen(false);
+  if (elements.accountsMenuButton) {
+    elements.accountsMenuButton.classList.toggle("has-accounts", hasAccounts);
+    elements.accountsMenuButton.setAttribute("aria-label", t("profiles.menuButtonAria", { count }));
+  }
+}
+
+function clearSavedProfileIntroState() {
+  if (state.savedProfileIntroTimer) {
+    window.clearTimeout(state.savedProfileIntroTimer);
+    state.savedProfileIntroTimer = null;
+  }
+  elements.accountsMenu?.classList.remove("is-panel-intro");
+  for (const row of elements.savedProfileList?.querySelectorAll(".saved-profile-row.is-new-profile") || []) {
+    row.classList.remove("is-new-profile");
+    row.style.removeProperty("--profile-intro-delay");
+  }
+}
+
+function animateNewSavedProfiles(profileIds) {
+  const introIds = new Set(profileIds.filter(validateSavedProfileId));
+  if (!introIds.size || !elements.accountsMenu || !elements.savedProfileList) return;
+
+  clearSavedProfileIntroState();
+  setAccountsMenuOpen(true, "intro");
+
+  const introRows = [...elements.savedProfileList.querySelectorAll(".saved-profile-row")].filter((row) =>
+    introIds.has(row.dataset.profileId),
+  );
+  if (!introRows.length) return;
+
+  const maxIntroDelay = Math.min(
+    (introRows.length - 1) * SAVED_PROFILE_INTRO_STAGGER_MS,
+    SAVED_PROFILE_INTRO_MAX_STAGGER_MS,
+  );
+
+  elements.accountsMenu.classList.remove("is-panel-intro");
+  void elements.accountsMenu.offsetWidth;
+  elements.accountsMenu.classList.add("is-panel-intro");
+
+  for (const [index, row] of introRows.entries()) {
+    row.classList.remove("is-new-profile");
+    row.style.setProperty(
+      "--profile-intro-delay",
+      `${Math.min(index * SAVED_PROFILE_INTRO_STAGGER_MS, SAVED_PROFILE_INTRO_MAX_STAGGER_MS)}ms`,
+    );
+  }
+
+  void elements.savedProfileList.offsetWidth;
+  for (const row of introRows) {
+    row.classList.add("is-new-profile");
+  }
+
+  state.savedProfileIntroTimer = window.setTimeout(() => {
+    clearSavedProfileIntroState();
+    if (state.accountsMenuOpenMode === "intro") setAccountsMenuOpen(false);
+  }, maxIntroDelay + SAVED_PROFILE_INTRO_ANIMATION_MS + SAVED_PROFILE_INTRO_CLOSE_DELAY_MS);
+}
+
+function clearSavedProfileDragState() {
+  state.draggedSavedProfileIndex = null;
+  elements.savedProfileList?.classList.remove("is-reordering");
+  for (const row of elements.savedProfileList?.querySelectorAll(".saved-profile-row") || []) {
+    row.classList.remove("is-dragging", "is-drag-over");
+  }
+}
+
+function moveSavedProfileToIndex(sourceIndex, targetIndex) {
+  if (
+    !Number.isInteger(sourceIndex) ||
+    !Number.isInteger(targetIndex) ||
+    sourceIndex < 0 ||
+    targetIndex < 0 ||
+    sourceIndex >= state.savedProfiles.length ||
+    targetIndex >= state.savedProfiles.length ||
+    sourceIndex === targetIndex
+  ) {
+    return;
+  }
+
+  const nextProfiles = [...state.savedProfiles];
+  const [movedProfile] = nextProfiles.splice(sourceIndex, 1);
+  nextProfiles.splice(targetIndex, 0, movedProfile);
+  state.savedProfiles = writeSavedProfilesToStorage(nextProfiles);
+  hideSavedProfilePinPanel();
+  renderSavedProfiles();
 }
 
 function validationMessage(validation) {
@@ -1399,7 +1668,7 @@ function apiErrorMessage(path, status, serverMessage) {
   const genericKey = `api.${status}`;
   if (hasTranslation(genericKey)) return t(genericKey);
 
-  if (currentLanguage === DEFAULT_LANGUAGE && serverMessage) return serverMessage;
+  if (currentLanguage === "ru" && serverMessage) return serverMessage;
   return t("api.requestFailed");
 }
 
@@ -1781,6 +2050,7 @@ function mergeSavedProfile(profiles, profile) {
 async function rememberSavedProfiles(profilesToRemember) {
   let profiles = state.savedProfiles.length ? [...state.savedProfiles] : loadSavedProfilesFromStorage();
   const rememberedProfiles = [];
+  const newProfileIds = [];
 
   for (const profile of profilesToRemember) {
     const recordId = validateProfileRecordId(profile?.recordId) ? profile.recordId : "";
@@ -1797,11 +2067,15 @@ async function rememberSavedProfiles(profilesToRemember) {
     const storedProfile = normalized
       ? profiles.find((item) => item.id === normalized.id || (normalized.r && item.r === normalized.r))
       : null;
-    if (storedProfile) rememberedProfiles.push(storedProfile);
+    if (storedProfile) {
+      rememberedProfiles.push(storedProfile);
+      newProfileIds.push(storedProfile.id);
+    }
   }
 
   state.savedProfiles = writeSavedProfilesToStorage(profiles);
   renderSavedProfiles();
+  animateNewSavedProfiles(newProfileIds);
   return rememberedProfiles
     .map((profile) => state.savedProfiles.find((item) => item.id === profile.id || (profile.r && item.r === profile.r)))
     .filter(Boolean);
@@ -1822,10 +2096,9 @@ function updateSavedProfileMetadata(id, { recordId, label, kind, mask } = {}) {
   });
   if (!nextProfile) return;
 
-  state.savedProfiles = writeSavedProfilesToStorage([
-    nextProfile,
-    ...state.savedProfiles.filter((_, profileIndex) => profileIndex !== index),
-  ]);
+  const nextProfiles = [...state.savedProfiles];
+  nextProfiles[index] = nextProfile;
+  state.savedProfiles = writeSavedProfilesToStorage(nextProfiles);
   renderSavedProfiles();
 }
 
@@ -1838,31 +2111,6 @@ function clearSavedProfiles() {
   state.savedProfiles = [];
   deleteSavedProfileStorage();
   renderSavedProfiles();
-}
-
-function moveSavedProfile(index, direction) {
-  const targetIndex = index + direction;
-  if (
-    !Number.isInteger(index) ||
-    !Number.isInteger(targetIndex) ||
-    index < 0 ||
-    targetIndex < 0 ||
-    index >= state.savedProfiles.length ||
-    targetIndex >= state.savedProfiles.length
-  ) {
-    return;
-  }
-
-  const nextProfiles = [...state.savedProfiles];
-  [nextProfiles[index], nextProfiles[targetIndex]] = [nextProfiles[targetIndex], nextProfiles[index]];
-  state.savedProfiles = writeSavedProfilesToStorage(nextProfiles);
-  hideSavedProfilePinPanel();
-  renderSavedProfiles();
-
-  const movedButton = elements.savedProfileList.querySelector(
-    `[data-profile-action="${direction < 0 ? "move-up" : "move-down"}"][data-profile-index="${targetIndex}"]`,
-  );
-  movedButton?.focus();
 }
 
 function maskAccessCode(profile) {
@@ -1913,11 +2161,52 @@ async function submitSavedProfilePin() {
   }
 }
 
+function updateSavedProfileActiveState() {
+  if (!elements.savedProfileList) return;
+  for (const row of elements.savedProfileList.querySelectorAll(".saved-profile-row")) {
+    const isActive = Boolean(state.activeSavedProfileId && row.dataset.profileId === state.activeSavedProfileId);
+    row.classList.toggle("is-active", isActive);
+    if (isActive) {
+      row.setAttribute("aria-current", "true");
+    } else {
+      row.removeAttribute("aria-current");
+    }
+  }
+}
+
+function normalizeSavedProfileSearchQuery(value) {
+  return String(value || "").trim().toLocaleLowerCase();
+}
+
+function applySavedProfileSearch() {
+  if (!elements.savedProfileList) return;
+  const query = state.savedProfileSearchQuery;
+  for (const row of elements.savedProfileList.querySelectorAll(".saved-profile-row")) {
+    row.hidden = Boolean(query && !row.dataset.profileSearch?.includes(query));
+  }
+}
+
+function updateSavedProfileSearchState() {
+  const shouldShowSearch = state.savedProfiles.length > 2;
+  if (elements.savedProfileSearch) elements.savedProfileSearch.hidden = !shouldShowSearch;
+
+  if (!shouldShowSearch) {
+    state.savedProfileSearchQuery = "";
+    if (elements.savedProfileSearchInput) elements.savedProfileSearchInput.value = "";
+  }
+
+  applySavedProfileSearch();
+}
+
 function renderSavedProfiles() {
   elements.savedProfileList.textContent = "";
-  elements.savedProfiles.hidden = state.savedProfiles.length === 0;
+  const hasSavedProfiles = state.savedProfiles.length > 0;
+  elements.savedProfiles.hidden = !hasSavedProfiles;
+  document.body.classList.toggle("has-saved-profiles", hasSavedProfiles);
+  updateSavedProfilesMenuState();
 
-  if (!state.savedProfiles.length) {
+  if (!hasSavedProfiles) {
+    updateSavedProfileSearchState();
     hideSavedProfilePinPanel();
     return;
   }
@@ -1925,76 +2214,69 @@ function renderSavedProfiles() {
   for (const [index, profile] of state.savedProfiles.entries()) {
     const row = document.createElement("div");
     row.className = "saved-profile-row";
+    if (profile.id === state.activeSavedProfileId) {
+      row.classList.add("is-active");
+      row.setAttribute("aria-current", "true");
+    }
+    row.dataset.profileAction = "open";
+    row.dataset.profileIndex = String(index);
+    row.dataset.profileId = profile.id;
+    row.dataset.profileSearch = normalizeSavedProfileSearchQuery(profile.l);
+    row.tabIndex = 0;
+    row.setAttribute("role", "button");
+    row.setAttribute("aria-label", `${t("profiles.open")}: ${profile.l}`);
+    row.title = profile.l;
+
+    const dragHandle = document.createElement("button");
+    dragHandle.type = "button";
+    dragHandle.className = "saved-profile-drag-handle";
+    dragHandle.draggable = true;
+    dragHandle.dataset.profileIndex = String(index);
+    dragHandle.setAttribute("aria-label", t("profiles.dragHandle"));
+    dragHandle.title = t("profiles.dragHandle");
 
     const details = document.createElement("div");
+    details.className = "saved-profile-details";
     const title = document.createElement("strong");
     title.textContent = profile.l;
     const meta = document.createElement("span");
     const attemptsLeft = SAVED_PROFILE_MAX_PIN_ATTEMPTS - profile.a;
     const kindText = t(`profiles.kind.${profile.k}`);
-    const protectionText = profile.p === 0 ? t("profiles.noPin") : t("profiles.pinProtected");
     meta.textContent =
       profile.a > 0
-        ? `${kindText} · ${maskAccessCode(profile)} · ${protectionText} · ${t("profiles.attemptsLeft", { count: attemptsLeft })}`
-        : `${kindText} · ${maskAccessCode(profile)} · ${protectionText}`;
+        ? `${kindText} · ${maskAccessCode(profile)} · ${t("profiles.attemptsLeft", { count: attemptsLeft })}`
+        : `${kindText} · ${maskAccessCode(profile)}`;
     details.append(title, meta);
 
-    const actions = document.createElement("div");
-    actions.className = "saved-profile-actions";
-
-    const reorderActions = document.createElement("div");
-    reorderActions.className = "saved-profile-reorder-actions";
-
-    const moveUpButton = document.createElement("button");
-    moveUpButton.type = "button";
-    moveUpButton.className = "icon-button saved-profile-reorder-button";
-    moveUpButton.dataset.profileAction = "move-up";
-    moveUpButton.dataset.profileIndex = String(index);
-    moveUpButton.setAttribute("aria-label", t("profiles.moveUp"));
-    moveUpButton.title = t("profiles.moveUp");
-    moveUpButton.disabled = index === 0;
-    moveUpButton.textContent = "↑";
-
-    const moveDownButton = document.createElement("button");
-    moveDownButton.type = "button";
-    moveDownButton.className = "icon-button saved-profile-reorder-button";
-    moveDownButton.dataset.profileAction = "move-down";
-    moveDownButton.dataset.profileIndex = String(index);
-    moveDownButton.setAttribute("aria-label", t("profiles.moveDown"));
-    moveDownButton.title = t("profiles.moveDown");
-    moveDownButton.disabled = index === state.savedProfiles.length - 1;
-    moveDownButton.textContent = "↓";
-
-    reorderActions.append(moveUpButton, moveDownButton);
-    actions.append(reorderActions);
-
-    if (profile.p === 0) {
-      const noPinLabel = document.createElement("span");
-      noPinLabel.className = "profile-no-pin-label";
-      noPinLabel.textContent = t("profiles.noPinShort");
-      actions.append(noPinLabel);
+    const lockBadge = document.createElement("span");
+    if (profile.p !== 0) {
+      lockBadge.className = "saved-profile-pin-badge";
+      lockBadge.setAttribute("aria-label", t("profiles.pinProtected"));
+      lockBadge.setAttribute("role", "img");
+      lockBadge.title = t("profiles.pinProtected");
+      lockBadge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>';
     }
-
-    const openButton = document.createElement("button");
-    openButton.type = "button";
-    openButton.className = "copy-button";
-    openButton.dataset.profileAction = "open";
-    openButton.dataset.profileIndex = String(index);
-    openButton.textContent = t("profiles.open");
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.className = "text-button danger";
+    removeButton.className = "saved-profile-remove-button";
     removeButton.dataset.profileAction = "remove";
     removeButton.dataset.profileIndex = String(index);
-    removeButton.textContent = t("profiles.remove");
+    removeButton.setAttribute("aria-label", t("profiles.remove"));
+    removeButton.title = t("profiles.remove");
+    removeButton.textContent = "\u00d7";
 
-    actions.append(openButton, removeButton);
-    row.append(details, actions);
+    const actions = document.createElement("div");
+    actions.className = "saved-profile-actions";
+    actions.append(removeButton);
+    row.append(dragHandle, details);
+    if (profile.p !== 0) row.append(lockBadge);
+    row.append(actions);
     elements.savedProfileList.append(row);
   }
 
   updateSavedProfilePinPanel();
+  updateSavedProfileSearchState();
 }
 
 function handleSavedProfilePinFailure(index, error) {
@@ -2571,13 +2853,17 @@ function clearActiveVault({ hide = true } = {}) {
   state.activeAccessCode = null;
   state.activeAccessToken = null;
   state.activeSavedProfileId = null;
+  updateSavedProfileActiveState();
   state.accessKind = null;
   state.hasAlias = false;
 
   elements.guardCode.textContent = "•••••";
   elements.countdownValue.textContent = "—";
   elements.countdownCircle.style.strokeDashoffset = "100";
-  if (hide) elements.authPanel.hidden = true;
+  if (hide) {
+    clearAuthPanelScrollHighlight();
+    elements.authPanel.hidden = true;
+  }
 }
 
 async function updateGuardCode() {
@@ -2603,6 +2889,47 @@ async function updateGuardCode() {
   }
 }
 
+function getStickyHeaderOffset() {
+  const header = document.querySelector(".site-header");
+  const headerHeight = header ? Math.ceil(header.getBoundingClientRect().height) : 0;
+  return headerHeight + AUTH_PANEL_SCROLL_TOP_FALLBACK_OFFSET;
+}
+
+function clearAuthPanelScrollHighlight() {
+  if (state.authPanelHighlightTimer) {
+    window.clearTimeout(state.authPanelHighlightTimer);
+    state.authPanelHighlightTimer = null;
+  }
+  elements.authPanel?.classList.remove("is-scroll-highlight");
+}
+
+function startAuthPanelScrollHighlight() {
+  if (!elements.authPanel) return;
+  clearAuthPanelScrollHighlight();
+  void elements.authPanel.offsetWidth;
+  elements.authPanel.classList.add("is-scroll-highlight");
+  state.authPanelHighlightTimer = window.setTimeout(() => {
+    elements.authPanel.classList.remove("is-scroll-highlight");
+    state.authPanelHighlightTimer = null;
+  }, AUTH_PANEL_SCROLL_HIGHLIGHT_MS);
+}
+
+function scrollAuthPanelIntoView() {
+  if (!elements.authPanel || elements.authPanel.hidden) return;
+
+  const rect = elements.authPanel.getBoundingClientRect();
+  const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  const panelTop = rect.top + scrollY;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const fitsNearBottom = rect.height < viewportHeight - AUTH_PANEL_SCROLL_BOTTOM_OFFSET;
+  const targetTop = fitsNearBottom
+    ? panelTop - (viewportHeight - rect.height - AUTH_PANEL_SCROLL_BOTTOM_OFFSET)
+    : panelTop - getStickyHeaderOffset();
+
+  window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+  startAuthPanelScrollHighlight();
+}
+
 function activateVault({
   payload,
   dataKey,
@@ -2622,6 +2949,7 @@ function activateVault({
   state.activeAccessCode = accessCode;
   state.activeAccessToken = accessToken;
   state.activeSavedProfileId = savedProfileId;
+  updateSavedProfileActiveState();
   state.hasAlias = Boolean(hasAlias);
 
   elements.accountLabel.textContent = payload.label || "Steam Guard";
@@ -2635,7 +2963,7 @@ function activateVault({
 
   updateGuardCode();
   state.timerId = setInterval(updateGuardCode, 250);
-  if (scroll) elements.authPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (scroll) scrollAuthPanelIntoView();
 }
 
 async function handleAccessSubmit(event) {
@@ -2696,6 +3024,7 @@ async function handleAccessSubmit(event) {
     });
     dataKey = null;
     elements.accessCode.value = "";
+    if (savedProfileId) closeAccountsMenuAfterHoverSelection();
     setStatus(elements.accessStatus, t("access.openSuccess"), "success");
   } catch (error) {
     if (dataKey instanceof Uint8Array) dataKey.fill(0);
@@ -2786,7 +3115,6 @@ async function handleImportSubmit(event) {
     );
     const activeSavedProfileId =
       rememberedProfiles.find((profile) => profile.r && profile.r === activeResult.recordId)?.id || null;
-    setVaultMode("access");
     setStatus(elements.savedProfileStatus, t("profiles.savedCount", { count: rememberedProfiles.length }), "success");
 
     for (const result of inactiveResults) {
@@ -2940,9 +3268,49 @@ elements.importForm.addEventListener("submit", handleImportSubmit);
 elements.aliasForm.addEventListener("submit", handleAliasSubmit);
 elements.customAlias.addEventListener("input", updateAliasHint);
 elements.rememberImportedPinEnabled.addEventListener("change", updateRememberPinState);
+elements.accountsMenuButton?.addEventListener("click", (event) => {
+  if (state.savedProfiles.length === 0) {
+    event.currentTarget.blur();
+    return;
+  }
+  const isOpen = elements.accountsMenu?.classList.contains("is-open");
+  if (isOpen && state.accountsMenuOpenMode === "click") {
+    setAccountsMenuOpen(false);
+    return;
+  }
+  setAccountsMenuOpen(true, "click");
+});
+elements.accountsMenu?.addEventListener("mouseenter", () => {
+  if (state.accountsMenuOpenMode === "click") return;
+  setAccountsMenuOpen(true, "hover");
+});
+elements.accountsMenu?.addEventListener("mouseleave", () => {
+  if (state.accountsMenuOpenMode === "hover") setAccountsMenuOpen(false);
+});
+document.addEventListener("click", (event) => {
+  if (!elements.accountsMenu?.classList.contains("is-open")) return;
+  if (elements.accountsMenu.contains(event.target)) return;
+  setAccountsMenuOpen(false);
+});
+elements.savedProfileSearchInput?.addEventListener("input", () => {
+  state.savedProfileSearchQuery = normalizeSavedProfileSearchQuery(elements.savedProfileSearchInput.value);
+  hideSavedProfilePinPanel();
+  applySavedProfileSearch();
+});
+elements.savedProfileSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !state.savedProfileSearchQuery) return;
+  event.preventDefault();
+  state.savedProfileSearchQuery = "";
+  elements.savedProfileSearchInput.value = "";
+  hideSavedProfilePinPanel();
+  applySavedProfileSearch();
+});
 elements.savedProfileList.addEventListener("click", (event) => {
+  if (event.target.closest(".saved-profile-drag-handle")) return;
   const button = event.target.closest("[data-profile-action]");
   if (!button) return;
+  if (button.disabled) return;
+  if (button.getAttribute("aria-disabled") === "true") return;
 
   const index = Number(button.dataset.profileIndex);
   if (!Number.isInteger(index)) return;
@@ -2959,22 +3327,66 @@ elements.savedProfileList.addEventListener("click", (event) => {
     return;
   }
 
-  if (button.dataset.profileAction === "move-up") {
-    moveSavedProfile(index, -1);
-    return;
-  }
-
-  if (button.dataset.profileAction === "move-down") {
-    moveSavedProfile(index, 1);
-    return;
-  }
-
   const profile = state.savedProfiles[index];
   if (!profile) return;
   hideSavedProfilePinPanel();
   removeSavedProfile(profile.id);
   showToast(t("profiles.removed"));
 });
+elements.savedProfileList.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const row = event.target.closest('.saved-profile-row[data-profile-action="open"]');
+  if (!row || !elements.savedProfileList.contains(row) || event.target.closest("button")) return;
+  event.preventDefault();
+  row.click();
+});
+elements.savedProfileList.addEventListener("dragstart", (event) => {
+  const handle = event.target.closest(".saved-profile-drag-handle");
+  if (!handle || !elements.savedProfileList.contains(handle)) return;
+
+  const row = handle.closest(".saved-profile-row");
+  const index = Number(row?.dataset.profileIndex);
+  if (!Number.isInteger(index)) {
+    event.preventDefault();
+    return;
+  }
+
+  state.draggedSavedProfileIndex = index;
+  elements.savedProfileList.classList.add("is-reordering");
+  row.classList.add("is-dragging");
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", String(index));
+  event.dataTransfer.setDragImage(row, Math.min(row.offsetWidth / 2, 80), row.offsetHeight / 2);
+});
+elements.savedProfileList.addEventListener("dragover", (event) => {
+  if (!Number.isInteger(state.draggedSavedProfileIndex)) return;
+  const row = event.target.closest(".saved-profile-row");
+  if (!row || !elements.savedProfileList.contains(row)) return;
+
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+  for (const item of elements.savedProfileList.querySelectorAll(".saved-profile-row.is-drag-over")) {
+    if (item !== row) item.classList.remove("is-drag-over");
+  }
+  row.classList.add("is-drag-over");
+});
+elements.savedProfileList.addEventListener("dragleave", (event) => {
+  const row = event.target.closest(".saved-profile-row");
+  if (!row || row.contains(event.relatedTarget)) return;
+  row.classList.remove("is-drag-over");
+});
+elements.savedProfileList.addEventListener("drop", (event) => {
+  if (!Number.isInteger(state.draggedSavedProfileIndex)) return;
+  const row = event.target.closest(".saved-profile-row");
+  if (!row || !elements.savedProfileList.contains(row)) return;
+
+  event.preventDefault();
+  const sourceIndex = Number(event.dataTransfer.getData("text/plain")) || state.draggedSavedProfileIndex;
+  const targetIndex = Number(row.dataset.profileIndex);
+  moveSavedProfileToIndex(sourceIndex, targetIndex);
+  clearSavedProfileDragState();
+});
+elements.savedProfileList.addEventListener("dragend", clearSavedProfileDragState);
 elements.savedProfilePin.addEventListener("keydown", (event) => {
   if (event.key !== "Enter") return;
   event.preventDefault();
@@ -3049,7 +3461,9 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden && state.vaultPayload) updateGuardCode();
 });
 
+setupLavaBackground();
 currentLanguage = getInitialLanguage();
+mountSavedProfilesMenu();
 state.savedProfiles = loadSavedProfilesFromStorage();
 elements.year.textContent = new Date().getFullYear();
 setVaultMode("access");

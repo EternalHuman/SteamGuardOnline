@@ -31,15 +31,23 @@
             <small>SteamGuardOnline</small>
           </span>
         </a>
-        <nav class="header-page-links" aria-label="Информационные разделы" data-i18n-attr="aria-label:header.infoTabsAria">
-          <a class="header-mode-button" href="/api" data-site-tab="api" data-i18n="vault.tab.api">API</a>
-        </nav>
+      </div>
+
+      <div id="accounts-menu" class="accounts-menu">
+        <button id="accounts-menu-button" class="accounts-menu-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Аккаунты: 0">
+          <span class="accounts-menu-icon" aria-hidden="true"><span></span></span>
+          <span data-i18n="profiles.menuButton">Аккаунты</span>
+          <span id="saved-profiles-count" class="accounts-count">0</span>
+        </button>
+        <div class="accounts-dropdown" aria-labelledby="accounts-menu-button" hidden>
+          <div id="saved-profiles-site-slot" class="accounts-dropdown-slot"></div>
+        </div>
       </div>
 
       <nav class="header-actions" aria-label="Ссылки проекта" data-i18n-attr="aria-label:header.projectLinksAria">
         <span id="service-status" class="service-status" data-kind="checking" data-i18n="service.checking">Проверка API…</span>
-        <a class="ghost-link" href="https://github.com/EternalHuman/SteamGuardOnline" target="_blank" rel="noopener noreferrer">
-          GitHub
+        <a class="ghost-link" href="/api" data-site-tab="api" data-i18n-attr="aria-label:vault.tab.api">
+          <span data-i18n="vault.tab.api">API</span>
           <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4h9v9M16 4 6 14" /></svg>
         </a>
         <div class="language-switcher">
@@ -55,8 +63,9 @@
       </nav>
     </header>
 
-    <main>
-      <section class="hero section-shell" data-home-section>
+    <div class="site-layout">
+      <main class="site-main">
+        <section class="hero section-shell" data-home-section>
         <div class="hero-copy">
           <div class="eyebrow" data-i18n-html="hero.eyebrow"><span></span> Online Steam Desktop Authenticator</div>
           <h1 data-i18n-html="hero.title">Steam Guard-коды<br /><em>на любом устройстве</em></h1>
@@ -71,7 +80,7 @@
           </div>
         </div>
 
-        <div class="app-card" aria-label="SGO (SteamGuardOnline)">
+        <div class="app-card vault-card" aria-label="SGO (SteamGuardOnline)">
           <div class="app-card-header">
             <div>
               <span class="card-kicker" data-i18n="vault.kicker">Зашифрованное хранилище</span>
@@ -128,8 +137,19 @@
 
             <div id="saved-profiles" class="saved-profiles" hidden>
               <div class="saved-profiles-header">
-                <strong data-i18n="profiles.title">Сохранённые профили</strong>
+                <strong id="saved-profiles-title" data-i18n="profiles.title">Сохранённые аккаунты</strong>
                 <button id="clear-profiles" class="text-button" type="button" data-i18n="profiles.clear">Очистить</button>
+              </div>
+              <div id="saved-profile-search" class="saved-profile-search" hidden>
+                <label class="sr-only" for="saved-profile-search-input" data-i18n="profiles.searchLabel">Поиск аккаунта</label>
+                <input
+                  id="saved-profile-search-input"
+                  type="search"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Поиск по нику"
+                  data-i18n-attr="placeholder:profiles.searchPlaceholder;aria-label:profiles.searchLabel"
+                />
               </div>
               <div id="saved-profile-list" class="saved-profile-list"></div>
               <div id="saved-profile-pin-panel" class="saved-profile-pin-panel" hidden>
@@ -293,22 +313,19 @@
               </div>
             </div>
 
-            <div class="endpoint-list" aria-label="API endpoints" data-i18n-attr="aria-label:api.endpointsAria">
-              <div class="endpoint-row"><code>GET /api/health</code><span data-i18n="api.endpoint.health">Проверка готовности API и KV.</span></div>
-              <div class="endpoint-row"><code>POST /api/import</code><span data-i18n="api.endpoint.import">Создаёт зашифрованное хранилище и индексы доступа.</span></div>
-              <div class="endpoint-row"><code>POST /api/lookup</code><span data-i18n="api.endpoint.lookup">Возвращает encrypted payload и обёрнутый ключ по lookup token.</span></div>
-              <div class="endpoint-row"><code>POST /api/alias</code><span data-i18n="api.endpoint.alias">Привязывает, заменяет или удаляет пользовательский код.</span></div>
-              <div class="endpoint-row"><code>POST /api/delete</code><span data-i18n="api.endpoint.delete">Удаляет хранилище и связанные индексы из KV.</span></div>
-              <div class="endpoint-row"><code>POST /api/save-saved</code><span data-i18n="api.endpoint.saveSaved">Сохраняет PIN-зашифрованный access ID для профиля.</span></div>
-              <div class="endpoint-row"><code>POST /api/open-saved</code><span data-i18n="api.endpoint.openSaved">Проверяет verifier и возвращает encrypted access ID.</span></div>
-              <div class="endpoint-row"><code>POST /api/delete-saved</code><span data-i18n="api.endpoint.deleteSaved">Удаляет saved profile и связанное хранилище.</span></div>
-            </div>
-
             <div class="api-detail-list">
               <article class="api-detail-card">
                 <div>
                   <code>GET /api/health</code>
-                  <p>Параметры не нужны. Используется для проверки готовности Pages Function и привязанного KV namespace.</p>
+                  <p>Лёгкая проверка готовности для мониторинга, smoke-тестов после deploy и статуса в интерфейсе. Endpoint не читает и не изменяет пользовательские хранилища.</p>
+                  <div class="api-doc-block">
+                    <strong>Запрос</strong>
+                    <p>Query-параметры и тело запроса не нужны. Отправляйте <code>Accept: application/json</code> и не кэшируйте результат.</p>
+                  </div>
+                  <div class="api-doc-block">
+                    <strong>Ответ</strong>
+                    <p><code>200</code> возвращает <code>{ "ok": true, "service": "sda-cloudflare-pages", "version": 1 }</code>. <code>503</code> означает, что binding <code>SDA_KV</code> не настроен или ещё недоступен.</p>
+                  </div>
                 </div>
                 <pre><code>fetch("/api/health", {
   headers: { accept: "application/json" },
@@ -320,7 +337,20 @@
               <article class="api-detail-card">
                 <div>
                   <code>POST /api/import</code>
-                  <p>Создаёт vault. Тело запроса: <code>payload</code> с <code>v</code>, <code>iv</code>, <code>ciphertext</code>; <code>primary</code> с <code>token</code> и <code>wrap</code>; опциональный <code>alias</code> с таким же форматом.</p>
+                  <p>Создаёт новую запись encrypted vault и индексы доступа. Браузер шифрует минимальный payload до запроса; API не получает пароль Steam, session, identity secret или plaintext shared secret.</p>
+                  <div class="api-doc-block">
+                    <strong>Тело запроса</strong>
+                    <ul class="api-field-list">
+                      <li><code>payload</code> <span class="api-type">object</span>: encrypted payload хранилища, <code>{ v: int, iv: string, ciphertext: string }</code>.</li>
+                      <li><code>primary</code> <span class="api-type">object</span>: основной индекс доступа, <code>{ token: string, wrap: object }</code>.</li>
+                      <li><code>primary.wrap</code> <span class="api-type">object</span>: wrapped data key, <code>{ v: int, salt: string, iv: string, ciphertext: string }</code>.</li>
+                      <li><code>alias</code> <span class="api-type">object|null</span>: опциональный пользовательский код с той же структурой, что и <code>primary</code>.</li>
+                    </ul>
+                  </div>
+                  <div class="api-doc-block">
+                    <strong>Ответ и ошибки</strong>
+                    <p><code>201</code> возвращает <code>recordId</code>, <code>createdAt</code> и <code>aliasAttached</code>. Частые ошибки: <code>400</code> некорректный envelope, <code>409</code> занятый token, <code>413</code> тело больше 24 KB, <code>415</code> нет JSON content type, <code>429</code> превышен лимит импорта.</p>
+                  </div>
                 </div>
                 <pre><code>await fetch("/api/import", {
   method: "POST",
@@ -328,7 +358,10 @@
   credentials: "omit",
   body: JSON.stringify({
     payload: { v: 1, iv: "...", ciphertext: "..." },
-    primary: { token: "...", wrap: { v: 1, iv: "...", ciphertext: "..." } },
+    primary: {
+      token: "base64url-lookup-token",
+      wrap: { v: 1, salt: "...", iv: "...", ciphertext: "..." }
+    },
     alias: null
   })
 });</code></pre>
@@ -337,7 +370,15 @@
               <article class="api-detail-card">
                 <div>
                   <code>POST /api/lookup</code>
-                  <p>Открывает vault по lookup token. Тело: <code>{ "token": "..." }</code>. Успешный ответ содержит <code>kind</code>, <code>payload</code>, <code>wrap</code> и признак <code>hasAlias</code>.</p>
+                  <p>Находит encrypted vault по заранее подготовленному lookup token и возвращает wrapped data key для этого access code. Расшифровка по-прежнему происходит только в браузере.</p>
+                  <div class="api-doc-block">
+                    <strong>Тело запроса</strong>
+                    <p><code>token</code> <span class="api-type">string</span> — 43-символьный base64url lookup token, локально полученный из основного ID или alias.</p>
+                  </div>
+                  <div class="api-doc-block">
+                    <strong>Ответ и ошибки</strong>
+                    <p><code>200</code> возвращает <code>kind</code>, <code>recordId</code>, <code>payload</code>, <code>wrap</code>, <code>createdAt</code> и <code>hasAlias</code>. <code>404</code> означает неизвестный token. <code>503</code> может кратко появиться, пока KV реплицирует запись.</p>
+                  </div>
                 </div>
                 <pre><code>const response = await fetch("/api/lookup", {
   method: "POST",
@@ -350,7 +391,20 @@
               <article class="api-detail-card">
                 <div>
                   <code>POST /api/alias</code>
-                  <p>Доступен только при входе по основному ID. Чтобы привязать alias, отправьте <code>primaryToken</code> и объект <code>alias</code>. Чтобы удалить alias, отправьте <code>{ "primaryToken": "...", "remove": true }</code>.</p>
+                  <p>Создаёт, заменяет или удаляет пользовательский код для существующего vault. Endpoint намеренно требует primary token: вход по alias не даёт права управлять alias.</p>
+                  <div class="api-doc-block">
+                    <strong>Тело запроса</strong>
+                    <ul class="api-field-list">
+                      <li><code>primaryToken</code> <span class="api-type">string</span>: primary lookup token текущего vault.</li>
+                      <li><code>alias</code> <span class="api-type">object</span>: для добавления/замены, <code>{ token: string, wrap: object }</code>.</li>
+                      <li><code>alias.wrap</code> <span class="api-type">object</span>: wrapped key, <code>{ v: int, salt: string, iv: string, ciphertext: string }</code>.</li>
+                      <li><code>remove</code> <span class="api-type">boolean</span>: отправьте <code>true</code>, чтобы удалить alias вместо добавления.</li>
+                    </ul>
+                  </div>
+                  <div class="api-doc-block">
+                    <strong>Ответ и ошибки</strong>
+                    <p><code>200</code> возвращает <code>aliasAttached: true</code> после добавления/замены и <code>false</code> после удаления. <code>403</code> означает, что token не primary; <code>409</code> — alias уже используется другим vault.</p>
+                  </div>
                 </div>
                 <pre><code>await fetch("/api/alias", {
   method: "POST",
@@ -358,7 +412,10 @@
   credentials: "omit",
   body: JSON.stringify({
     primaryToken: "...",
-    alias: { token: "...", wrap: { v: 1, iv: "...", ciphertext: "..." } }
+    alias: {
+      token: "...",
+      wrap: { v: 1, salt: "...", iv: "...", ciphertext: "..." }
+    }
   })
 });</code></pre>
               </article>
@@ -366,7 +423,15 @@
               <article class="api-detail-card">
                 <div>
                   <code>POST /api/delete</code>
-                  <p>Удаляет зашифрованное хранилище и связанные индексы доступа. Требует <code>primaryToken</code>; alias-token для удаления не подходит.</p>
+                  <p>Безвозвратно удаляет encrypted vault и все связанные индексы доступа из KV. Используется при удалении аккаунта или отзыве доверия к сохранённому ID.</p>
+                  <div class="api-doc-block">
+                    <strong>Тело запроса</strong>
+                    <p><code>primaryToken</code> <span class="api-type">string</span> обязателен. Alias token отклоняется, потому что удаление относится к управлению хранилищем.</p>
+                  </div>
+                  <div class="api-doc-block">
+                    <strong>Ответ и ошибки</strong>
+                    <p><code>200</code> возвращает <code>{ "ok": true, "deleted": true }</code>. <code>403</code> означает, что token не primary. <code>404</code> означает, что vault уже отсутствует.</p>
+                  </div>
                 </div>
                 <pre><code>await fetch("/api/delete", {
   method: "POST",
@@ -379,7 +444,20 @@
               <article class="api-detail-card">
                 <div>
                   <code>POST /api/save-saved</code>
-                  <p>Создаёт saved profile для cookies. Тело: <code>id</code>, <code>accessToken</code>, <code>verifier</code> и <code>encrypted</code> с PIN-зашифрованным access ID или device-secret вариантом.</p>
+                  <p>Сохраняет серверную часть saved profile. При PIN-защите браузер хранит локально только metadata профиля, а encrypted access ID остаётся в KV за verifier.</p>
+                  <div class="api-doc-block">
+                    <strong>Тело запроса</strong>
+                    <ul class="api-field-list">
+                      <li><code>id</code> <span class="api-type">string</span>: browser-generated saved profile id, 24-64 base64url символа.</li>
+                      <li><code>accessToken</code> <span class="api-type">string</span>: lookup token vault, который открывает этот профиль.</li>
+                      <li><code>verifier</code> <span class="api-type">string</span>: 43-символьный verifier, полученный в браузере.</li>
+                      <li><code>encrypted</code> <span class="api-type">object</span>: encrypted access ID envelope, <code>{ v: int, salt: string, iv: string, ciphertext: string }</code>.</li>
+                    </ul>
+                  </div>
+                  <div class="api-doc-block">
+                    <strong>Ответ и ошибки</strong>
+                    <p><code>200</code> возвращает <code>{ "ok": true, "saved": true }</code>. <code>404</code> означает, что связанный vault не найден. <code>409</code> — этот profile id уже указывает на другой vault.</p>
+                  </div>
                 </div>
                 <pre><code>await fetch("/api/save-saved", {
   method: "POST",
@@ -389,7 +467,7 @@
     id: "profile-id",
     accessToken: "...",
     verifier: "...",
-    encrypted: { v: 1, iv: "...", ciphertext: "..." }
+    encrypted: { v: 1, salt: "...", iv: "...", ciphertext: "..." }
   })
 });</code></pre>
               </article>
@@ -397,7 +475,15 @@
               <article class="api-detail-card">
                 <div>
                   <code>POST /api/open-saved</code>
-                  <p>Проверяет verifier saved profile. При успехе возвращает <code>encrypted</code>; при неверном PIN возвращает <code>attemptsLeft</code>. После 5 неверных попыток профиль и vault удаляются.</p>
+                  <p>Открывает encrypted access ID сохранённого профиля после того, как браузер получил verifier из введённого PIN или device secret. API проверяет verifier, но не может расшифровать access ID.</p>
+                  <div class="api-doc-block">
+                    <strong>Тело запроса</strong>
+                    <p><code>id</code> <span class="api-type">string</span> определяет saved profile; <code>verifier</code> <span class="api-type">string</span> подтверждает, что пользователь ввёл подходящий PIN или использует сохранённый device secret.</p>
+                  </div>
+                  <div class="api-doc-block">
+                    <strong>Ответ и ошибки</strong>
+                    <p><code>200</code> возвращает <code>encrypted</code> и сбрасывает счётчик ошибок. <code>403</code> возвращает <code>attemptsLeft</code>; после 5 неверных попыток также возвращает <code>deleted: true</code> и удаляет vault из KV.</p>
+                  </div>
                 </div>
                 <pre><code>const response = await fetch("/api/open-saved", {
   method: "POST",
@@ -410,7 +496,15 @@
               <article class="api-detail-card">
                 <div>
                   <code>POST /api/delete-saved</code>
-                  <p>Удаляет saved profile и связанное с ним хранилище. Используется при ручном удалении профиля и после удаления vault.</p>
+                  <p>Удаляет saved profile record и vault, связанный с access token этого профиля. Интерфейс вызывает endpoint при удалении запомненного аккаунта.</p>
+                  <div class="api-doc-block">
+                    <strong>Тело запроса</strong>
+                    <p><code>id</code> <span class="api-type">string</span> — saved profile id, который хранится в браузерном списке профилей.</p>
+                  </div>
+                  <div class="api-doc-block">
+                    <strong>Ответ и ошибки</strong>
+                    <p><code>200</code> возвращает <code>deleted: true</code>, если связанный vault удалён, и <code>false</code>, если saved profile уже отсутствовал. Операция идемпотентна для отсутствующих saved profiles.</p>
+                  </div>
                 </div>
                 <pre><code>await fetch("/api/delete-saved", {
   method: "POST",
@@ -580,7 +674,8 @@
         </div>
       </section>
 
-    </main>
+      </main>
+    </div>
 
     <footer class="site-footer section-shell">
       <div>
