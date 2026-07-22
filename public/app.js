@@ -155,12 +155,12 @@ const LAVA_LAYER_SETTINGS = [
 
 const TRANSLATIONS = {
   ru: {
-    "meta.title": "SGO (SteamGuardOnline) — Online Steam Desktop Authenticator",
+    "meta.title": "SteamGuardOnline - Online Steam Desktop Authenticator",
     "meta.description":
       "Open-source online Steam Desktop Authenticator для безопасного получения Steam Guard-кодов по секретному ID без логина и пароля Steam.",
     "language.label": "Язык",
     "language.aria": "Язык сайта",
-    "brand.homeAria": "SGO (SteamGuardOnline) — на главную",
+    "brand.homeAria": "SGO (SteamGuardOnline) - на главную",
     "header.projectLinksAria": "Ссылки проекта",
     "header.infoTabsAria": "Информационные разделы",
     "service.checking": "Проверка API…",
@@ -394,12 +394,12 @@ const TRANSLATIONS = {
     "api.503": "Сервис временно недоступен или KV ещё настраивается.",
   },
   en: {
-    "meta.title": "SGO (SteamGuardOnline) — Online Steam Desktop Authenticator",
+    "meta.title": "SteamGuardOnline - Online Steam Desktop Authenticator",
     "meta.description":
       "Open-source online Steam Desktop Authenticator for safely getting Steam Guard codes by secret ID without a Steam login or password.",
     "language.label": "Language",
     "language.aria": "Site language",
-    "brand.homeAria": "SGO (SteamGuardOnline) — home",
+    "brand.homeAria": "SGO (SteamGuardOnline) - home",
     "header.projectLinksAria": "Project links",
     "header.infoTabsAria": "Information sections",
     "service.checking": "Checking API…",
@@ -630,11 +630,11 @@ const TRANSLATIONS = {
     "api.503": "The service is temporarily unavailable or KV is still being configured.",
   },
   "zh-CN": {
-    "meta.title": "SGO (SteamGuardOnline) — 在线 Steam Desktop Authenticator",
+    "meta.title": "SteamGuardOnline - 在线 Steam Desktop Authenticator",
     "meta.description": "开源在线 Steam Desktop Authenticator，可通过秘密 ID 安全获取 Steam Guard 代码，无需 Steam 登录名或密码。",
     "language.label": "语言",
     "language.aria": "网站语言",
-    "brand.homeAria": "SGO (SteamGuardOnline) — 首页",
+    "brand.homeAria": "SGO (SteamGuardOnline) - 首页",
     "header.projectLinksAria": "项目链接",
     "header.infoTabsAria": "信息部分",
     "service.checking": "正在检查 API…",
@@ -854,11 +854,11 @@ const TRANSLATIONS = {
     "api.503": "服务暂不可用，或 KV 仍在配置中。",
   },
   es: {
-    "meta.title": "SGO (SteamGuardOnline) — Steam Desktop Authenticator online",
+    "meta.title": "SteamGuardOnline - Steam Desktop Authenticator online",
     "meta.description": "Steam Desktop Authenticator online y open-source para obtener códigos Steam Guard mediante un ID secreto, sin usuario ni contraseña de Steam.",
     "language.label": "Idioma",
     "language.aria": "Idioma del sitio",
-    "brand.homeAria": "SGO (SteamGuardOnline) — inicio",
+    "brand.homeAria": "SGO (SteamGuardOnline) - inicio",
     "header.projectLinksAria": "Enlaces del proyecto",
     "header.infoTabsAria": "Secciones de información",
     "service.checking": "Comprobando API…",
@@ -1077,11 +1077,11 @@ const TRANSLATIONS = {
     "api.503": "El servicio no está disponible temporalmente o KV aún se está configurando.",
   },
   "pt-BR": {
-    "meta.title": "SGO (SteamGuardOnline) — Steam Desktop Authenticator online",
+    "meta.title": "SteamGuardOnline - Steam Desktop Authenticator online",
     "meta.description": "Steam Desktop Authenticator online e open-source para obter códigos Steam Guard por ID secreto, sem login ou senha da Steam.",
     "language.label": "Idioma",
     "language.aria": "Idioma do site",
-    "brand.homeAria": "SGO (SteamGuardOnline) — início",
+    "brand.homeAria": "SGO (SteamGuardOnline) - início",
     "header.projectLinksAria": "Links do projeto",
     "header.infoTabsAria": "Seções de informação",
     "service.checking": "Verificando API…",
@@ -2858,7 +2858,7 @@ function clearActiveVault({ hide = true } = {}) {
   state.hasAlias = false;
 
   elements.guardCode.textContent = "•••••";
-  elements.countdownValue.textContent = "—";
+  elements.countdownValue.textContent = "-";
   elements.countdownCircle.style.strokeDashoffset = "100";
   if (hide) {
     clearAuthPanelScrollHighlight();

@@ -8,7 +8,7 @@
       content="Open-source online Steam Desktop Authenticator для безопасного получения Steam Guard-кодов по секретному ID без логина и пароля Steam."
     />
     <meta name="theme-color" content="#0b1018" />
-    <title>SGO (SteamGuardOnline) — Online Steam Desktop Authenticator</title>
+    <title>SteamGuardOnline - Online Steam Desktop Authenticator</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/app.js"></script>
@@ -19,7 +19,7 @@
 
     <header class="site-header">
       <div class="header-left">
-        <a class="brand" href="/" aria-label="SGO (SteamGuardOnline) — на главную" data-i18n-attr="aria-label:brand.homeAria">
+        <a class="brand" href="/" aria-label="SGO (SteamGuardOnline) - на главную" data-i18n-attr="aria-label:brand.homeAria">
           <span class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 48 48" role="img">
               <path d="M24 4 39 10v11c0 10.2-6.1 18.1-15 23-8.9-4.9-15-12.8-15-23V10L24 4Z" />
@@ -373,7 +373,7 @@
                   <p>Находит encrypted vault по заранее подготовленному lookup token и возвращает wrapped data key для этого access code. Расшифровка по-прежнему происходит только в браузере.</p>
                   <div class="api-doc-block">
                     <strong>Тело запроса</strong>
-                    <p><code>token</code> <span class="api-type">string</span> — 43-символьный base64url lookup token, локально полученный из основного ID или alias.</p>
+                    <p><code>token</code> <span class="api-type">string</span> - 43-символьный base64url lookup token, локально полученный из основного ID или alias.</p>
                   </div>
                   <div class="api-doc-block">
                     <strong>Ответ и ошибки</strong>
@@ -403,7 +403,7 @@
                   </div>
                   <div class="api-doc-block">
                     <strong>Ответ и ошибки</strong>
-                    <p><code>200</code> возвращает <code>aliasAttached: true</code> после добавления/замены и <code>false</code> после удаления. <code>403</code> означает, что token не primary; <code>409</code> — alias уже используется другим vault.</p>
+                    <p><code>200</code> возвращает <code>aliasAttached: true</code> после добавления/замены и <code>false</code> после удаления. <code>403</code> означает, что token не primary; <code>409</code> - alias уже используется другим vault.</p>
                   </div>
                 </div>
                 <pre><code>await fetch("/api/alias", {
@@ -456,7 +456,7 @@
                   </div>
                   <div class="api-doc-block">
                     <strong>Ответ и ошибки</strong>
-                    <p><code>200</code> возвращает <code>{ "ok": true, "saved": true }</code>. <code>404</code> означает, что связанный vault не найден. <code>409</code> — этот profile id уже указывает на другой vault.</p>
+                    <p><code>200</code> возвращает <code>{ "ok": true, "saved": true }</code>. <code>404</code> означает, что связанный vault не найден. <code>409</code> - этот profile id уже указывает на другой vault.</p>
                   </div>
                 </div>
                 <pre><code>await fetch("/api/save-saved", {
@@ -499,7 +499,7 @@
                   <p>Удаляет saved profile record и vault, связанный с access token этого профиля. Интерфейс вызывает endpoint при удалении запомненного аккаунта.</p>
                   <div class="api-doc-block">
                     <strong>Тело запроса</strong>
-                    <p><code>id</code> <span class="api-type">string</span> — saved profile id, который хранится в браузерном списке профилей.</p>
+                    <p><code>id</code> <span class="api-type">string</span> - saved profile id, который хранится в браузерном списке профилей.</p>
                   </div>
                   <div class="api-doc-block">
                     <strong>Ответ и ошибки</strong>
@@ -550,7 +550,7 @@
               </svg>
               <div>
                 <span data-i18n="auth.countdownLabel">Обновление через</span>
-                <strong id="countdown-value">—</strong>
+                <strong id="countdown-value">-</strong>
               </div>
             </div>
           </div>
