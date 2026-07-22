@@ -788,6 +788,41 @@ button:disabled {
   gap: 9px;
 }
 
+.saved-profile-reorder-actions {
+  display: inline-flex;
+  flex: none;
+  gap: 5px;
+}
+
+.saved-profile-reorder-button {
+  width: 31px;
+  min-width: 31px;
+  height: 31px;
+  min-height: 31px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted-strong);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.saved-profile-reorder-button:hover:not(:disabled) {
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.09);
+  color: white;
+}
+
+.saved-profile-reorder-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.34;
+}
+
 .saved-profile-pin-panel {
   display: grid;
   gap: 12px;
@@ -2169,6 +2204,10 @@ body[data-page="api"] .site-info-panels {
 
   .saved-profile-actions {
     width: 100%;
+  }
+
+  .saved-profile-reorder-actions {
+    flex: none;
   }
 
   .profile-pin-input {

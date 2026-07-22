@@ -150,6 +150,8 @@ const TRANSLATIONS = {
     "profiles.empty": "Сохранённых профилей пока нет.",
     "profiles.open": "Открыть",
     "profiles.remove": "Удалить",
+    "profiles.moveUp": "Поднять профиль",
+    "profiles.moveDown": "Опустить профиль",
     "profiles.clear": "Очистить",
     "profiles.clearConfirm": "Удалить все сохранённые профили из хранилища этого браузера?",
     "profiles.rememberTitle": "Запомнить профиль на этом устройстве",
@@ -382,6 +384,8 @@ const TRANSLATIONS = {
     "profiles.empty": "No saved profiles yet.",
     "profiles.open": "Open",
     "profiles.remove": "Remove",
+    "profiles.moveUp": "Move profile up",
+    "profiles.moveDown": "Move profile down",
     "profiles.clear": "Clear",
     "profiles.clearConfirm": "Delete all saved profiles from this browser storage?",
     "profiles.rememberTitle": "Remember profile on this device",
@@ -609,6 +613,8 @@ const TRANSLATIONS = {
     "profiles.empty": "还没有保存的配置。",
     "profiles.open": "打开",
     "profiles.remove": "删除",
+    "profiles.moveUp": "上移配置",
+    "profiles.moveDown": "下移配置",
     "profiles.clear": "清空",
     "profiles.clearConfirm": "从此浏览器存储中删除所有已保存配置？",
     "profiles.rememberTitle": "在此设备记住配置",
@@ -826,6 +832,8 @@ const TRANSLATIONS = {
     "profiles.empty": "Aún no hay perfiles guardados.",
     "profiles.open": "Abrir",
     "profiles.remove": "Eliminar",
+    "profiles.moveUp": "Subir perfil",
+    "profiles.moveDown": "Bajar perfil",
     "profiles.clear": "Limpiar",
     "profiles.clearConfirm": "¿Eliminar todos los perfiles guardados del almacenamiento de este navegador?",
     "profiles.rememberTitle": "Recordar perfil en este dispositivo",
@@ -1042,6 +1050,8 @@ const TRANSLATIONS = {
     "profiles.empty": "Ainda não há perfis salvos.",
     "profiles.open": "Abrir",
     "profiles.remove": "Remover",
+    "profiles.moveUp": "Mover perfil para cima",
+    "profiles.moveDown": "Mover perfil para baixo",
     "profiles.clear": "Limpar",
     "profiles.clearConfirm": "Excluir todos os perfis salvos do armazenamento deste navegador?",
     "profiles.rememberTitle": "Lembrar perfil neste dispositivo",
@@ -1625,12 +1635,7 @@ function parseSavedProfileCollection(raw) {
   const items = Array.isArray(parsed) ? parsed : parsed?.profiles;
   if (!Array.isArray(items)) return [];
 
-  return dedupeSavedProfiles(
-    items
-      .map(normalizeSavedProfile)
-      .filter(Boolean)
-      .sort((left, right) => right.t - left.t),
-  ).slice(0, SAVED_PROFILE_LIMIT);
+  return dedupeSavedProfiles(items.map(normalizeSavedProfile).filter(Boolean)).slice(0, SAVED_PROFILE_LIMIT);
 }
 
 function loadSavedProfilesFromCookie() {
@@ -1835,6 +1840,31 @@ function clearSavedProfiles() {
   renderSavedProfiles();
 }
 
+function moveSavedProfile(index, direction) {
+  const targetIndex = index + direction;
+  if (
+    !Number.isInteger(index) ||
+    !Number.isInteger(targetIndex) ||
+    index < 0 ||
+    targetIndex < 0 ||
+    index >= state.savedProfiles.length ||
+    targetIndex >= state.savedProfiles.length
+  ) {
+    return;
+  }
+
+  const nextProfiles = [...state.savedProfiles];
+  [nextProfiles[index], nextProfiles[targetIndex]] = [nextProfiles[targetIndex], nextProfiles[index]];
+  state.savedProfiles = writeSavedProfilesToStorage(nextProfiles);
+  hideSavedProfilePinPanel();
+  renderSavedProfiles();
+
+  const movedButton = elements.savedProfileList.querySelector(
+    `[data-profile-action="${direction < 0 ? "move-up" : "move-down"}"][data-profile-index="${targetIndex}"]`,
+  );
+  movedButton?.focus();
+}
+
 function maskAccessCode(profile) {
   return profile?.m ? `••••${profile.m}` : "••••";
 }
@@ -1911,6 +1941,32 @@ function renderSavedProfiles() {
 
     const actions = document.createElement("div");
     actions.className = "saved-profile-actions";
+
+    const reorderActions = document.createElement("div");
+    reorderActions.className = "saved-profile-reorder-actions";
+
+    const moveUpButton = document.createElement("button");
+    moveUpButton.type = "button";
+    moveUpButton.className = "icon-button saved-profile-reorder-button";
+    moveUpButton.dataset.profileAction = "move-up";
+    moveUpButton.dataset.profileIndex = String(index);
+    moveUpButton.setAttribute("aria-label", t("profiles.moveUp"));
+    moveUpButton.title = t("profiles.moveUp");
+    moveUpButton.disabled = index === 0;
+    moveUpButton.textContent = "↑";
+
+    const moveDownButton = document.createElement("button");
+    moveDownButton.type = "button";
+    moveDownButton.className = "icon-button saved-profile-reorder-button";
+    moveDownButton.dataset.profileAction = "move-down";
+    moveDownButton.dataset.profileIndex = String(index);
+    moveDownButton.setAttribute("aria-label", t("profiles.moveDown"));
+    moveDownButton.title = t("profiles.moveDown");
+    moveDownButton.disabled = index === state.savedProfiles.length - 1;
+    moveDownButton.textContent = "↓";
+
+    reorderActions.append(moveUpButton, moveDownButton);
+    actions.append(reorderActions);
 
     if (profile.p === 0) {
       const noPinLabel = document.createElement("span");
@@ -2004,7 +2060,7 @@ async function openSavedProfile(index, pin) {
   try {
     const accessCode = await decryptAccessCodeFromProfile(profile, secret);
     const nextProfiles = [...state.savedProfiles];
-    nextProfiles[index] = { ...profile, a: 0, t: Date.now() };
+    nextProfiles[index] = { ...profile, a: 0 };
     state.savedProfiles = writeSavedProfilesToStorage(nextProfiles);
     renderSavedProfiles();
     setStatus(elements.savedProfileStatus);
@@ -2900,6 +2956,16 @@ elements.savedProfileList.addEventListener("click", (event) => {
     }
     hideSavedProfilePinPanel();
     openSavedProfile(index, "");
+    return;
+  }
+
+  if (button.dataset.profileAction === "move-up") {
+    moveSavedProfile(index, -1);
+    return;
+  }
+
+  if (button.dataset.profileAction === "move-down") {
+    moveSavedProfile(index, 1);
     return;
   }
 
