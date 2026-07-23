@@ -119,7 +119,7 @@ const AUTH_PANEL_SCROLL_TOP_FALLBACK_OFFSET = 18;
 const AUTH_PANEL_SCROLL_HIGHLIGHT_MS = 2000;
 const VAULT_MODE_FADE_OUT_MS = 120;
 const VAULT_MODE_ANIMATION_MS = 380;
-const FIXED_DEPLOY_URL = "https://3cf77373.steamguardonline.pages.dev";
+const FIXED_DEPLOY_URL = "https://162ccd79.steamguardonline.pages.dev";
 const FIXED_DEPLOY_EXAMPLE_URL = "https://1a2b3c4d.steamguardonline.pages.dev";
 const FIXED_DEPLOY_HOST_PATTERN = /^(?=.*\d)[a-z0-9]{7,}\.steamguardonline\.pages\.dev$/i;
 const VERSION_MANIFEST_URL = "/version.json";
