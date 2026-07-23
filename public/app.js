@@ -325,7 +325,7 @@ const TRANSLATIONS = {
     "benefits.title": "Прозрачная защита.<br />Контроль на вашей стороне.",
     "benefits.maxSecurityTitle": "Режим максимальной безопасности",
     "benefits.maxSecurityText":
-      "Для режима максимальной безопасности используйте фиксированный Cloudflare Pages deploy <code>https://3cf77373.steamguardonline.pages.dev</code>. Эта версия привязана к конкретной сборке, исходному коду и commit в GitHub: уже опубликованное содержимое по этому адресу нельзя изменить извне или незаметно заменить без создания нового deploy. Поэтому ссылка даёт проверяемую гарантию неизменности кода именно этой версии сайта перед вводом maFile или ID. Общая безопасность также зависит от вашего устройства, браузера и проверки адреса в строке браузера.",
+      "Для режима максимальной безопасности используйте фиксированный Cloudflare Pages deploy <a href='https://3cf77373.steamguardonline.pages.dev' target='_blank' rel='noopener noreferrer'><code>https://3cf77373.steamguardonline.pages.dev</code></a>. Эта версия привязана к конкретной сборке, исходному коду и commit в GitHub: уже опубликованное содержимое по этому адресу нельзя изменить извне или незаметно заменить без создания нового deploy. Поэтому ссылка даёт проверяемую гарантию неизменности кода именно этой версии сайта перед вводом maFile или ID. Общая безопасность также зависит от вашего устройства, браузера и проверки адреса в строке браузера.",
     "benefits.openTitle": "Полностью open-source",
     "benefits.openText": "Клиентская криптография, Pages Function и схема хранения доступны для проверки и собственного deploy.",
     "benefits.openLink": "Открыть исходный код",
@@ -563,7 +563,7 @@ const TRANSLATIONS = {
     "benefits.title": "Transparent protection.<br />Control stays with you.",
     "benefits.maxSecurityTitle": "Maximum security mode",
     "benefits.maxSecurityText":
-      "For maximum security mode, use the fixed Cloudflare Pages deploy <code>https://3cf77373.steamguardonline.pages.dev</code>. This version is tied to a specific build, source code, and GitHub commit: already published content at this address cannot be changed externally or silently replaced without creating a new deploy. The link therefore gives a verifiable guarantee that the code of this exact site version is unchanged before entering a maFile or ID. Overall safety also depends on your device, browser, and checking the address bar.",
+      "For maximum security mode, use the fixed Cloudflare Pages deploy <a href='https://3cf77373.steamguardonline.pages.dev' target='_blank' rel='noopener noreferrer'><code>https://3cf77373.steamguardonline.pages.dev</code></a>. This version is tied to a specific build, source code, and GitHub commit: already published content at this address cannot be changed externally or silently replaced without creating a new deploy. The link therefore gives a verifiable guarantee that the code of this exact site version is unchanged before entering a maFile or ID. Overall safety also depends on your device, browser, and checking the address bar.",
     "benefits.openTitle": "Fully open-source",
     "benefits.openText": "Client-side cryptography, Pages Function, and the storage model are available for review and self-deploy.",
     "benefits.openLink": "Open source code",
@@ -796,7 +796,7 @@ const TRANSLATIONS = {
     "benefits.title": "透明保护。<br />控制权由你掌握。",
     "benefits.maxSecurityTitle": "最高安全模式",
     "benefits.maxSecurityText":
-      "最高安全模式请使用固定的 Cloudflare Pages deploy：<code>https://3cf77373.steamguardonline.pages.dev</code>。此版本绑定到特定构建、源代码和 GitHub commit：该地址下已发布的内容不能被外部修改，也不能在不创建新 deploy 的情况下被悄悄替换。因此，在输入 maFile 或 ID 前，此链接可验证地保证该网站版本的代码未被更改。整体安全性还取决于你的设备、浏览器以及地址栏中的网址检查。",
+      "最高安全模式请使用固定的 Cloudflare Pages deploy：<a href='https://3cf77373.steamguardonline.pages.dev' target='_blank' rel='noopener noreferrer'><code>https://3cf77373.steamguardonline.pages.dev</code></a>。此版本绑定到特定构建、源代码和 GitHub commit：该地址下已发布的内容不能被外部修改，也不能在不创建新 deploy 的情况下被悄悄替换。因此，在输入 maFile 或 ID 前，此链接可验证地保证该网站版本的代码未被更改。整体安全性还取决于你的设备、浏览器以及地址栏中的网址检查。",
     "benefits.openTitle": "完全开源",
     "benefits.openText": "客户端加密、Pages Function 和存储模型都可审查，也可自行部署。",
     "benefits.openLink": "打开源代码",
@@ -1021,7 +1021,7 @@ const TRANSLATIONS = {
     "benefits.title": "Protección transparente.<br />El control queda en tus manos.",
     "benefits.maxSecurityTitle": "Modo de máxima seguridad",
     "benefits.maxSecurityText":
-      "Para el modo de máxima seguridad, usa el deploy fijo de Cloudflare Pages <code>https://3cf77373.steamguardonline.pages.dev</code>. Esta versión está vinculada a una build, código fuente y commit de GitHub concretos: el contenido ya publicado en esta dirección no puede modificarse desde fuera ni reemplazarse silenciosamente sin crear un nuevo deploy. Por eso el enlace ofrece una garantía verificable de que el código de esta versión exacta del sitio no ha cambiado antes de introducir un maFile o ID. La seguridad general también depende de tu dispositivo, navegador y de comprobar la dirección en la barra del navegador.",
+      "Para el modo de máxima seguridad, usa el deploy fijo de Cloudflare Pages <a href='https://3cf77373.steamguardonline.pages.dev' target='_blank' rel='noopener noreferrer'><code>https://3cf77373.steamguardonline.pages.dev</code></a>. Esta versión está vinculada a una build, código fuente y commit de GitHub concretos: el contenido ya publicado en esta dirección no puede modificarse desde fuera ni reemplazarse silenciosamente sin crear un nuevo deploy. Por eso el enlace ofrece una garantía verificable de que el código de esta versión exacta del sitio no ha cambiado antes de introducir un maFile o ID. La seguridad general también depende de tu dispositivo, navegador y de comprobar la dirección en la barra del navegador.",
     "benefits.openTitle": "Totalmente open-source",
     "benefits.openText": "La criptografía del cliente, Pages Function y el modelo de almacenamiento están disponibles para revisión y despliegue propio.",
     "benefits.openLink": "Abrir código fuente",
@@ -1246,7 +1246,7 @@ const TRANSLATIONS = {
     "benefits.title": "Proteção transparente.<br />O controle fica com você.",
     "benefits.maxSecurityTitle": "Modo de segurança máxima",
     "benefits.maxSecurityText":
-      "Para o modo de segurança máxima, use o deploy fixo do Cloudflare Pages <code>https://3cf77373.steamguardonline.pages.dev</code>. Esta versão fica vinculada a uma build, código-fonte e commit específicos no GitHub: o conteúdo já publicado nesse endereço não pode ser alterado externamente nem substituído silenciosamente sem criar um novo deploy. Por isso, o link oferece uma garantia verificável de que o código desta versão exata do site não foi alterado antes de inserir um maFile ou ID. A segurança geral também depende do seu dispositivo, navegador e da conferência do endereço na barra do navegador.",
+      "Para o modo de segurança máxima, use o deploy fixo do Cloudflare Pages <a href='https://3cf77373.steamguardonline.pages.dev' target='_blank' rel='noopener noreferrer'><code>https://3cf77373.steamguardonline.pages.dev</code></a>. Esta versão fica vinculada a uma build, código-fonte e commit específicos no GitHub: o conteúdo já publicado nesse endereço não pode ser alterado externamente nem substituído silenciosamente sem criar um novo deploy. Por isso, o link oferece uma garantia verificável de que o código desta versão exata do site não foi alterado antes de inserir um maFile ou ID. A segurança geral também depende do seu dispositivo, navegador e da conferência do endereço na barra do navegador.",
     "benefits.openTitle": "Totalmente open-source",
     "benefits.openText": "A criptografia do cliente, Pages Function e o modelo de armazenamento estão disponíveis para revisão e deploy próprio.",
     "benefits.openLink": "Abrir código-fonte",

@@ -2533,6 +2533,18 @@ body[data-page="api"] .site-info-panels {
   overflow-wrap: anywhere;
 }
 
+.max-security-note a {
+  color: var(--green);
+  text-decoration: underline;
+  text-decoration-color: rgba(98, 217, 165, 0.42);
+  text-underline-offset: 3px;
+}
+
+.max-security-note a:hover {
+  color: var(--text);
+  text-decoration-color: currentColor;
+}
+
 .benefit-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
