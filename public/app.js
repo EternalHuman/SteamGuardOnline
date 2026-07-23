@@ -340,17 +340,17 @@ const TRANSLATIONS = {
     "benefits.title": "Прозрачная защита.<br />Контроль на вашей стороне.",
     "benefits.maxSecurityTitle": "Режим максимальной безопасности",
     "benefits.maxSecurityText":
-      "Сейчас открыт обычный адрес сайта. Для режима максимальной безопасности используйте фиксированный Cloudflare Pages deploy {deployLink}. Адрес такого формата, например {deployExample}, привязан к конкретной сборке, исходному коду и commit в GitHub. Содержимое уже опубликованного deploy нельзя незаметно заменить без создания новой версии, поэтому такую ссылку можно использовать как проверенную зафиксированную версию сайта перед вводом maFile или ID.",
+      "Для режима максимальной безопасности используйте фиксированный Cloudflare Pages deploy {deployLink}. Адрес такого формата, например {deployExample}, привязан к конкретной сборке, исходному коду и commit в GitHub. Содержимое уже опубликованного deploy нельзя незаметно заменить без создания новой версии, поэтому такую ссылку можно использовать как проверенную зафиксированную версию сайта перед вводом maFile или ID.",
     "benefits.maxSecurityTextFixed":
-      "Вы находитесь на статичной версии Cloudflare Pages deploy. Адрес такого формата, например {deployExample}, привязан к конкретной сборке, исходному коду и commit в GitHub. Содержимое уже опубликованного deploy нельзя незаметно заменить без создания новой версии, поэтому эту страницу можно использовать как проверенную зафиксированную версию сайта перед вводом maFile или ID. Ниже показаны commit и SHA-256 хэши критичных файлов для ручной проверки.",
+      "Вы находитесь на статичной версии Cloudflare Pages deploy. Адрес такого формата, например {deployExample}, привязан к конкретной сборке, исходному коду и commit в GitHub. Содержимое уже опубликованного deploy нельзя незаметно заменить без создания новой версии, поэтому эту страницу можно использовать как проверенную зафиксированную версию сайта перед вводом maFile или ID. Ниже показаны SHA-256 хэши критичных файлов для ручной проверки.",
     "deployCheck.title": "Проверка deploy и целостности",
     "deployCheck.loading": "Загрузка manifest...",
     "deployCheck.readyFixed": "Открыт фиксированный deploy",
     "deployCheck.readyOther": "Открыт другой адрес",
     "deployCheck.readyBrowser": "SHA-256 рассчитаны браузером",
-    "deployCheck.error": "Manifest недоступен",
+    "deployCheck.error": "Проверка недоступна",
     "deployCheck.help":
-      "Сайт загружает version.json текущего deploy и показывает commit, адрес сборки и SHA-256 хэши критичных файлов. Если manifest не включён в deploy, браузер рассчитает хэши публичных файлов сам.",
+      "Сайт загружает version.json текущего deploy и показывает адрес сборки и SHA-256 хэши критичных файлов. Если manifest не включён в deploy, браузер рассчитает хэши публичных файлов сам.",
     "deployCheck.deployUrl": "Фиксированный deploy",
     "deployCheck.currentHost": "Текущий адрес",
     "deployCheck.commit": "GitHub commit",
@@ -601,17 +601,17 @@ const TRANSLATIONS = {
     "benefits.title": "Transparent protection.<br />Control stays with you.",
     "benefits.maxSecurityTitle": "Maximum security mode",
     "benefits.maxSecurityText":
-      "The regular site address is open right now. For maximum security mode, use the fixed Cloudflare Pages deploy {deployLink}. An address in this format, for example {deployExample}, is tied to a specific build, source code, and GitHub commit. Already published deploy content cannot be silently replaced without creating a new version, so this kind of link can be used as a verified pinned site version before entering a maFile or ID.",
+      "For maximum security mode, use the fixed Cloudflare Pages deploy {deployLink}. An address in this format, for example {deployExample}, is tied to a specific build, source code, and GitHub commit. Already published deploy content cannot be silently replaced without creating a new version, so this kind of link can be used as a verified pinned site version before entering a maFile or ID.",
     "benefits.maxSecurityTextFixed":
-      "You are on a static Cloudflare Pages deploy version. An address in this format, for example {deployExample}, is tied to a specific build, source code, and GitHub commit. Already published deploy content cannot be silently replaced without creating a new version, so this page can be used as a verified pinned site version before entering a maFile or ID. The commit and SHA-256 hashes of critical files are shown below for manual verification.",
+      "You are on a static Cloudflare Pages deploy version. An address in this format, for example {deployExample}, is tied to a specific build, source code, and GitHub commit. Already published deploy content cannot be silently replaced without creating a new version, so this page can be used as a verified pinned site version before entering a maFile or ID. SHA-256 hashes of critical files are shown below for manual verification.",
     "deployCheck.title": "Deploy and integrity check",
     "deployCheck.loading": "Loading manifest...",
     "deployCheck.readyFixed": "Fixed deploy is open",
     "deployCheck.readyOther": "Different address is open",
     "deployCheck.readyBrowser": "SHA-256 calculated in browser",
-    "deployCheck.error": "Manifest is unavailable",
+    "deployCheck.error": "Verification is unavailable",
     "deployCheck.help":
-      "The site loads version.json from the current deploy and shows the commit, deploy URL, and SHA-256 hashes of critical files. If the manifest is not included in the deploy, the browser calculates hashes of public files itself.",
+      "The site loads version.json from the current deploy and shows the deploy URL and SHA-256 hashes of critical files. If the manifest is not included in the deploy, the browser calculates hashes of public files itself.",
     "deployCheck.deployUrl": "Fixed deploy",
     "deployCheck.currentHost": "Current address",
     "deployCheck.commit": "GitHub commit",
@@ -857,17 +857,17 @@ const TRANSLATIONS = {
     "benefits.title": "透明保护。<br />控制权由你掌握。",
     "benefits.maxSecurityTitle": "最高安全模式",
     "benefits.maxSecurityText":
-      "当前打开的是普通站点地址。最高安全模式请使用固定的 Cloudflare Pages deploy：{deployLink}。这种格式的地址，例如 {deployExample}，会绑定到特定构建、源代码和 GitHub commit。已经发布的 deploy 内容不能在不创建新版本的情况下被悄悄替换，因此这种链接可作为输入 maFile 或 ID 前可验证的固定网站版本。",
+      "最高安全模式请使用固定的 Cloudflare Pages deploy：{deployLink}。这种格式的地址，例如 {deployExample}，会绑定到特定构建、源代码和 GitHub commit。已经发布的 deploy 内容不能在不创建新版本的情况下被悄悄替换，因此这种链接可作为输入 maFile 或 ID 前可验证的固定网站版本。",
     "benefits.maxSecurityTextFixed":
-      "你正在使用静态 Cloudflare Pages deploy 版本。这种格式的地址，例如 {deployExample}，会绑定到特定构建、源代码和 GitHub commit。已经发布的 deploy 内容不能在不创建新版本的情况下被悄悄替换，因此此页面可作为输入 maFile 或 ID 前可验证的固定网站版本。下方显示 commit 和关键文件的 SHA-256 哈希，便于手动检查。",
+      "你正在使用静态 Cloudflare Pages deploy 版本。这种格式的地址，例如 {deployExample}，会绑定到特定构建、源代码和 GitHub commit。已经发布的 deploy 内容不能在不创建新版本的情况下被悄悄替换，因此此页面可作为输入 maFile 或 ID 前可验证的固定网站版本。下方显示关键文件的 SHA-256 哈希，便于手动检查。",
     "deployCheck.title": "Deploy 与完整性检查",
     "deployCheck.loading": "正在加载 manifest...",
     "deployCheck.readyFixed": "当前打开的是固定 deploy",
     "deployCheck.readyOther": "当前打开的是其他地址",
     "deployCheck.readyBrowser": "SHA-256 已在浏览器中计算",
-    "deployCheck.error": "Manifest 不可用",
+    "deployCheck.error": "验证不可用",
     "deployCheck.help":
-      "网站会从当前 deploy 加载 version.json，并显示 commit、deploy 地址以及关键文件的 SHA-256 哈希。如果 manifest 未包含在 deploy 中，浏览器会自行计算公开文件的哈希。",
+      "网站会从当前 deploy 加载 version.json，并显示 deploy 地址以及关键文件的 SHA-256 哈希。如果 manifest 未包含在 deploy 中，浏览器会自行计算公开文件的哈希。",
     "deployCheck.deployUrl": "固定 deploy",
     "deployCheck.currentHost": "当前地址",
     "deployCheck.commit": "GitHub commit",
@@ -1105,17 +1105,17 @@ const TRANSLATIONS = {
     "benefits.title": "Protección transparente.<br />El control queda en tus manos.",
     "benefits.maxSecurityTitle": "Modo de máxima seguridad",
     "benefits.maxSecurityText":
-      "Ahora está abierta la dirección normal del sitio. Para el modo de máxima seguridad, usa el deploy fijo de Cloudflare Pages {deployLink}. Una dirección con este formato, por ejemplo {deployExample}, está vinculada a una build, código fuente y commit de GitHub concretos. El contenido ya publicado del deploy no puede reemplazarse silenciosamente sin crear una nueva versión, así que este tipo de enlace puede usarse como versión fija verificada antes de introducir un maFile o ID.",
+      "Para el modo de máxima seguridad, usa el deploy fijo de Cloudflare Pages {deployLink}. Una dirección con este formato, por ejemplo {deployExample}, está vinculada a una build, código fuente y commit de GitHub concretos. El contenido ya publicado del deploy no puede reemplazarse silenciosamente sin crear una nueva versión, así que este tipo de enlace puede usarse como versión fija verificada antes de introducir un maFile o ID.",
     "benefits.maxSecurityTextFixed":
-      "Estás en una versión estática de Cloudflare Pages deploy. Una dirección con este formato, por ejemplo {deployExample}, está vinculada a una build, código fuente y commit de GitHub concretos. El contenido ya publicado del deploy no puede reemplazarse silenciosamente sin crear una nueva versión, así que esta página puede usarse como versión fija verificada antes de introducir un maFile o ID. Abajo se muestran el commit y los hashes SHA-256 de archivos críticos para verificación manual.",
+      "Estás en una versión estática de Cloudflare Pages deploy. Una dirección con este formato, por ejemplo {deployExample}, está vinculada a una build, código fuente y commit de GitHub concretos. El contenido ya publicado del deploy no puede reemplazarse silenciosamente sin crear una nueva versión, así que esta página puede usarse como versión fija verificada antes de introducir un maFile o ID. Abajo se muestran los hashes SHA-256 de archivos críticos para verificación manual.",
     "deployCheck.title": "Comprobación de deploy e integridad",
     "deployCheck.loading": "Cargando manifest...",
     "deployCheck.readyFixed": "Deploy fijo abierto",
     "deployCheck.readyOther": "Dirección diferente abierta",
     "deployCheck.readyBrowser": "SHA-256 calculado en el navegador",
-    "deployCheck.error": "Manifest no disponible",
+    "deployCheck.error": "Verificación no disponible",
     "deployCheck.help":
-      "El sitio carga version.json desde el deploy actual y muestra el commit, la URL del deploy y los hashes SHA-256 de archivos críticos. Si el manifest no está incluido en el deploy, el navegador calcula los hashes de los archivos públicos.",
+      "El sitio carga version.json desde el deploy actual y muestra la URL del deploy y los hashes SHA-256 de archivos críticos. Si el manifest no está incluido en el deploy, el navegador calcula los hashes de los archivos públicos.",
     "deployCheck.deployUrl": "Deploy fijo",
     "deployCheck.currentHost": "Dirección actual",
     "deployCheck.commit": "Commit de GitHub",
@@ -1353,17 +1353,17 @@ const TRANSLATIONS = {
     "benefits.title": "Proteção transparente.<br />O controle fica com você.",
     "benefits.maxSecurityTitle": "Modo de segurança máxima",
     "benefits.maxSecurityText":
-      "O endereço normal do site está aberto agora. Para o modo de segurança máxima, use o deploy fixo do Cloudflare Pages {deployLink}. Um endereço nesse formato, por exemplo {deployExample}, fica vinculado a uma build, código-fonte e commit específicos no GitHub. O conteúdo já publicado do deploy não pode ser substituído silenciosamente sem criar uma nova versão, então esse tipo de link pode ser usado como uma versão fixa verificada antes de inserir um maFile ou ID.",
+      "Para o modo de segurança máxima, use o deploy fixo do Cloudflare Pages {deployLink}. Um endereço nesse formato, por exemplo {deployExample}, fica vinculado a uma build, código-fonte e commit específicos no GitHub. O conteúdo já publicado do deploy não pode ser substituído silenciosamente sem criar uma nova versão, então esse tipo de link pode ser usado como uma versão fixa verificada antes de inserir um maFile ou ID.",
     "benefits.maxSecurityTextFixed":
-      "Você está em uma versão estática do Cloudflare Pages deploy. Um endereço nesse formato, por exemplo {deployExample}, fica vinculado a uma build, código-fonte e commit específicos no GitHub. O conteúdo já publicado do deploy não pode ser substituído silenciosamente sem criar uma nova versão, então esta página pode ser usada como uma versão fixa verificada antes de inserir um maFile ou ID. Abaixo aparecem o commit e os hashes SHA-256 de arquivos críticos para verificação manual.",
+      "Você está em uma versão estática do Cloudflare Pages deploy. Um endereço nesse formato, por exemplo {deployExample}, fica vinculado a uma build, código-fonte e commit específicos no GitHub. O conteúdo já publicado do deploy não pode ser substituído silenciosamente sem criar uma nova versão, então esta página pode ser usada como uma versão fixa verificada antes de inserir um maFile ou ID. Abaixo aparecem os hashes SHA-256 de arquivos críticos para verificação manual.",
     "deployCheck.title": "Verificação de deploy e integridade",
     "deployCheck.loading": "Carregando manifest...",
     "deployCheck.readyFixed": "Deploy fixo aberto",
     "deployCheck.readyOther": "Endereço diferente aberto",
     "deployCheck.readyBrowser": "SHA-256 calculado no navegador",
-    "deployCheck.error": "Manifest indisponível",
+    "deployCheck.error": "Verificação indisponível",
     "deployCheck.help":
-      "O site carrega version.json do deploy atual e mostra o commit, a URL do deploy e hashes SHA-256 de arquivos críticos. Se o manifest não estiver incluído no deploy, o navegador calcula os hashes dos arquivos públicos.",
+      "O site carrega version.json do deploy atual e mostra a URL do deploy e hashes SHA-256 de arquivos críticos. Se o manifest não estiver incluído no deploy, o navegador calcula os hashes dos arquivos públicos.",
     "deployCheck.deployUrl": "Deploy fixo",
     "deployCheck.currentHost": "Endereço atual",
     "deployCheck.commit": "Commit do GitHub",
@@ -1797,11 +1797,13 @@ function renderDeployVerification() {
   appendDeployMetaRow("deployCheck.deployUrl", checkedDeployUrl, checkedDeployUrl);
   appendDeployMetaRow("deployCheck.currentHost", window.location.origin);
   const hasKnownCommit = manifest.commit && manifest.commit !== "unknown";
-  appendDeployMetaRow(
-    "deployCheck.commit",
-    hasKnownCommit ? manifest.commitShort || manifest.commit : t("deployCheck.notAvailable"),
-    hasKnownCommit && manifest.commitUrl ? manifest.commitUrl : "",
-  );
+  if (hasKnownCommit) {
+    appendDeployMetaRow(
+      "deployCheck.commit",
+      manifest.commitShort || manifest.commit,
+      manifest.commitUrl || "",
+    );
+  }
   appendDeployMetaRow("deployCheck.generatedAt", formatDeployDate(manifest.generatedAt));
   appendDeployMetaRow("deployCheck.source", manifest.sourceRepository, manifest.sourceRepository);
   if (typeof manifest.gitDirty === "boolean") {
