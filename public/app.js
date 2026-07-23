@@ -123,6 +123,13 @@ const FIXED_DEPLOY_URL = "https://162ccd79.steamguardonline.pages.dev";
 const FIXED_DEPLOY_EXAMPLE_URL = "https://1a2b3c4d.steamguardonline.pages.dev";
 const FIXED_DEPLOY_HOST_PATTERN = /^(?=.*\d)[a-z0-9]{7,}\.steamguardonline\.pages\.dev$/i;
 const VERSION_MANIFEST_URL = "/version.json";
+const SOURCE_REPOSITORY_URL = "https://github.com/EternalHuman/SteamGuardOnline";
+const BROWSER_HASH_FILES = [
+  { path: "/index.html", publicPath: "/index.html", label: "index.html" },
+  { path: "/app.js", publicPath: "/app.js", label: "app.js" },
+  { path: "/crypto.js", publicPath: "/crypto.js", label: "crypto.js" },
+  { path: "/styles.css", publicPath: "/styles.css", label: "styles.css" },
+];
 const PROFILE_PIN_MIN_LENGTH = 3;
 const PROFILE_PIN_MAX_LENGTH = 6;
 const PIN_KDF_ITERATIONS = 260_000;
@@ -340,14 +347,18 @@ const TRANSLATIONS = {
     "deployCheck.loading": "Загрузка manifest...",
     "deployCheck.readyFixed": "Открыт фиксированный deploy",
     "deployCheck.readyOther": "Открыт другой адрес",
+    "deployCheck.readyBrowser": "SHA-256 рассчитаны браузером",
     "deployCheck.error": "Manifest недоступен",
     "deployCheck.help":
-      "Сайт загружает version.json текущего deploy и показывает commit, адрес сборки и SHA-256 хэши критичных файлов. Это помогает вручную сверить опубликованную версию с исходным кодом.",
+      "Сайт загружает version.json текущего deploy и показывает commit, адрес сборки и SHA-256 хэши критичных файлов. Если manifest не включён в deploy, браузер рассчитает хэши публичных файлов сам.",
     "deployCheck.deployUrl": "Фиксированный deploy",
     "deployCheck.currentHost": "Текущий адрес",
     "deployCheck.commit": "GitHub commit",
     "deployCheck.generatedAt": "Manifest создан",
     "deployCheck.source": "Исходный код",
+    "deployCheck.manifestMode": "Режим проверки",
+    "deployCheck.manifestModeFile": "version.json из deploy",
+    "deployCheck.manifestModeBrowser": "Расчёт SHA-256 в браузере",
     "deployCheck.gitStatus": "Состояние сборки",
     "deployCheck.gitClean": "Без незакоммиченных изменений",
     "deployCheck.gitDirty": "В сборке были незакоммиченные изменения",
@@ -597,14 +608,18 @@ const TRANSLATIONS = {
     "deployCheck.loading": "Loading manifest...",
     "deployCheck.readyFixed": "Fixed deploy is open",
     "deployCheck.readyOther": "Different address is open",
+    "deployCheck.readyBrowser": "SHA-256 calculated in browser",
     "deployCheck.error": "Manifest is unavailable",
     "deployCheck.help":
-      "The site loads version.json from the current deploy and shows the commit, deploy URL, and SHA-256 hashes of critical files. This helps you manually compare the published version with the source code.",
+      "The site loads version.json from the current deploy and shows the commit, deploy URL, and SHA-256 hashes of critical files. If the manifest is not included in the deploy, the browser calculates hashes of public files itself.",
     "deployCheck.deployUrl": "Fixed deploy",
     "deployCheck.currentHost": "Current address",
     "deployCheck.commit": "GitHub commit",
     "deployCheck.generatedAt": "Manifest created",
     "deployCheck.source": "Source code",
+    "deployCheck.manifestMode": "Verification mode",
+    "deployCheck.manifestModeFile": "version.json from deploy",
+    "deployCheck.manifestModeBrowser": "SHA-256 calculation in browser",
     "deployCheck.gitStatus": "Build state",
     "deployCheck.gitClean": "No uncommitted changes",
     "deployCheck.gitDirty": "The build had uncommitted changes",
@@ -849,14 +864,18 @@ const TRANSLATIONS = {
     "deployCheck.loading": "正在加载 manifest...",
     "deployCheck.readyFixed": "当前打开的是固定 deploy",
     "deployCheck.readyOther": "当前打开的是其他地址",
+    "deployCheck.readyBrowser": "SHA-256 已在浏览器中计算",
     "deployCheck.error": "Manifest 不可用",
     "deployCheck.help":
-      "网站会从当前 deploy 加载 version.json，并显示 commit、deploy 地址以及关键文件的 SHA-256 哈希。这样可以手动对照已发布版本和源代码。",
+      "网站会从当前 deploy 加载 version.json，并显示 commit、deploy 地址以及关键文件的 SHA-256 哈希。如果 manifest 未包含在 deploy 中，浏览器会自行计算公开文件的哈希。",
     "deployCheck.deployUrl": "固定 deploy",
     "deployCheck.currentHost": "当前地址",
     "deployCheck.commit": "GitHub commit",
     "deployCheck.generatedAt": "Manifest 创建时间",
     "deployCheck.source": "源代码",
+    "deployCheck.manifestMode": "验证模式",
+    "deployCheck.manifestModeFile": "deploy 中的 version.json",
+    "deployCheck.manifestModeBrowser": "浏览器计算 SHA-256",
     "deployCheck.gitStatus": "构建状态",
     "deployCheck.gitClean": "没有未提交的更改",
     "deployCheck.gitDirty": "构建时存在未提交的更改",
@@ -1093,14 +1112,18 @@ const TRANSLATIONS = {
     "deployCheck.loading": "Cargando manifest...",
     "deployCheck.readyFixed": "Deploy fijo abierto",
     "deployCheck.readyOther": "Dirección diferente abierta",
+    "deployCheck.readyBrowser": "SHA-256 calculado en el navegador",
     "deployCheck.error": "Manifest no disponible",
     "deployCheck.help":
-      "El sitio carga version.json desde el deploy actual y muestra el commit, la URL del deploy y los hashes SHA-256 de archivos críticos. Esto ayuda a comparar manualmente la versión publicada con el código fuente.",
+      "El sitio carga version.json desde el deploy actual y muestra el commit, la URL del deploy y los hashes SHA-256 de archivos críticos. Si el manifest no está incluido en el deploy, el navegador calcula los hashes de los archivos públicos.",
     "deployCheck.deployUrl": "Deploy fijo",
     "deployCheck.currentHost": "Dirección actual",
     "deployCheck.commit": "Commit de GitHub",
     "deployCheck.generatedAt": "Manifest creado",
     "deployCheck.source": "Código fuente",
+    "deployCheck.manifestMode": "Modo de verificación",
+    "deployCheck.manifestModeFile": "version.json del deploy",
+    "deployCheck.manifestModeBrowser": "Cálculo SHA-256 en el navegador",
     "deployCheck.gitStatus": "Estado de la build",
     "deployCheck.gitClean": "Sin cambios sin commit",
     "deployCheck.gitDirty": "La build tenía cambios sin commit",
@@ -1337,14 +1360,18 @@ const TRANSLATIONS = {
     "deployCheck.loading": "Carregando manifest...",
     "deployCheck.readyFixed": "Deploy fixo aberto",
     "deployCheck.readyOther": "Endereço diferente aberto",
+    "deployCheck.readyBrowser": "SHA-256 calculado no navegador",
     "deployCheck.error": "Manifest indisponível",
     "deployCheck.help":
-      "O site carrega version.json do deploy atual e mostra o commit, a URL do deploy e hashes SHA-256 de arquivos críticos. Isso ajuda a comparar manualmente a versão publicada com o código-fonte.",
+      "O site carrega version.json do deploy atual e mostra o commit, a URL do deploy e hashes SHA-256 de arquivos críticos. Se o manifest não estiver incluído no deploy, o navegador calcula os hashes dos arquivos públicos.",
     "deployCheck.deployUrl": "Deploy fixo",
     "deployCheck.currentHost": "Endereço atual",
     "deployCheck.commit": "Commit do GitHub",
     "deployCheck.generatedAt": "Manifest criado",
     "deployCheck.source": "Código-fonte",
+    "deployCheck.manifestMode": "Modo de verificação",
+    "deployCheck.manifestModeFile": "version.json do deploy",
+    "deployCheck.manifestModeBrowser": "Cálculo SHA-256 no navegador",
     "deployCheck.gitStatus": "Estado da build",
     "deployCheck.gitClean": "Sem alterações sem commit",
     "deployCheck.gitDirty": "A build tinha alterações sem commit",
@@ -1596,6 +1623,15 @@ function formatDeployBytes(value) {
   return `${(bytes / 1024).toLocaleString(currentLanguage, { maximumFractionDigits: 1 })} KB`;
 }
 
+function bytesToHex(bytes) {
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256Hex(buffer) {
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  return bytesToHex(new Uint8Array(digest));
+}
+
 function setDeployCheckStatus(kind, message) {
   if (!elements.deployCheckStatus) return;
   elements.deployCheckStatus.dataset.kind = kind;
@@ -1639,7 +1675,12 @@ function deployHostFromUrl(value) {
   }
 }
 
+function isCurrentPageFixedDeploy() {
+  return FIXED_DEPLOY_HOST_PATTERN.test(window.location.host.toLowerCase());
+}
+
 function currentFixedDeployUrl() {
+  if (isCurrentPageFixedDeploy()) return window.location.origin;
   return state.deployManifest?.deployUrl || FIXED_DEPLOY_URL;
 }
 
@@ -1666,6 +1707,40 @@ function renderMaxSecurityText() {
     deployExample: deployExampleHtml(),
     deployLink: fixedDeployLinkHtml(),
   });
+}
+
+async function hashPublicFile(file) {
+  const response = await fetch(file.publicPath, {
+    credentials: "omit",
+    cache: "no-store",
+    headers: { accept: "*/*" },
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status} for ${file.publicPath}`);
+
+  const buffer = await response.arrayBuffer();
+  return {
+    ...file,
+    bytes: buffer.byteLength,
+    sha256: await sha256Hex(buffer),
+  };
+}
+
+async function createBrowserHashManifest() {
+  const files = await Promise.all(BROWSER_HASH_FILES.map(hashPublicFile));
+  return {
+    version: 1,
+    project: "SteamGuardOnline",
+    deployUrl: currentFixedDeployUrl(),
+    sourceRepository: SOURCE_REPOSITORY_URL,
+    commit: "unknown",
+    commitShort: "unknown",
+    commitUrl: SOURCE_REPOSITORY_URL,
+    gitDirty: null,
+    generatedAt: new Date().toISOString(),
+    hashAlgorithm: "SHA-256",
+    manifestSource: "browser",
+    files,
+  };
 }
 
 function appendDeployMetaRow(labelKey, value, href = "") {
@@ -1709,23 +1784,37 @@ function renderDeployVerification() {
     return;
   }
 
-  const fixedDeployOpen = isCurrentFixedDeployUrl(manifest.deployUrl);
-  const deployStatusKey = fixedDeployOpen ? "deployCheck.readyFixed" : "deployCheck.readyOther";
-  setDeployCheckStatus(fixedDeployOpen ? "success" : "warning", t(deployStatusKey));
+  const checkedDeployUrl = currentFixedDeployUrl();
+  const fixedDeployOpen = isCurrentFixedDeployUrl(checkedDeployUrl);
+  const deployStatusKey =
+    manifest.manifestSource === "browser"
+      ? "deployCheck.readyBrowser"
+      : fixedDeployOpen
+        ? "deployCheck.readyFixed"
+        : "deployCheck.readyOther";
+  setDeployCheckStatus(fixedDeployOpen && manifest.manifestSource !== "browser" ? "success" : "warning", t(deployStatusKey));
 
-  appendDeployMetaRow("deployCheck.deployUrl", manifest.deployUrl, manifest.deployUrl);
+  appendDeployMetaRow("deployCheck.deployUrl", checkedDeployUrl, checkedDeployUrl);
   appendDeployMetaRow("deployCheck.currentHost", window.location.origin);
+  const hasKnownCommit = manifest.commit && manifest.commit !== "unknown";
   appendDeployMetaRow(
     "deployCheck.commit",
-    manifest.commitShort || manifest.commit,
-    manifest.commitUrl && manifest.commit !== "unknown" ? manifest.commitUrl : "",
+    hasKnownCommit ? manifest.commitShort || manifest.commit : t("deployCheck.notAvailable"),
+    hasKnownCommit && manifest.commitUrl ? manifest.commitUrl : "",
   );
   appendDeployMetaRow("deployCheck.generatedAt", formatDeployDate(manifest.generatedAt));
   appendDeployMetaRow("deployCheck.source", manifest.sourceRepository, manifest.sourceRepository);
-  appendDeployMetaRow(
-    "deployCheck.gitStatus",
-    t(manifest.gitDirty ? "deployCheck.gitDirty" : "deployCheck.gitClean"),
-  );
+  if (typeof manifest.gitDirty === "boolean") {
+    appendDeployMetaRow(
+      "deployCheck.gitStatus",
+      t(manifest.gitDirty ? "deployCheck.gitDirty" : "deployCheck.gitClean"),
+    );
+  } else {
+    appendDeployMetaRow(
+      "deployCheck.manifestMode",
+      t(manifest.manifestSource === "browser" ? "deployCheck.manifestModeBrowser" : "deployCheck.manifestModeFile"),
+    );
+  }
 
   const title = document.createElement("div");
   title.className = "deploy-files-title";
@@ -1777,8 +1866,13 @@ async function loadDeployVerification() {
     state.deployManifest = manifest;
     state.deployManifestError = null;
   } catch (error) {
-    state.deployManifest = null;
-    state.deployManifestError = error;
+    try {
+      state.deployManifest = await createBrowserHashManifest();
+      state.deployManifestError = null;
+    } catch (fallbackError) {
+      state.deployManifest = null;
+      state.deployManifestError = fallbackError;
+    }
   }
   renderMaxSecurityText();
   renderDeployVerification();
