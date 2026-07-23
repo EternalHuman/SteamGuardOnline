@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const fallbackDeployUrl = "https://162ccd79.steamguardonline.pages.dev";
+const fallbackDeployUrl = "https://4391187a.steamguardonline.pages.dev";
 const deployUrl = process.env.SGO_FIXED_DEPLOY_URL || fallbackDeployUrl;
 const sourceRepository = "https://github.com/EternalHuman/SteamGuardOnline";
 
