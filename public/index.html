@@ -681,7 +681,16 @@
 
         <div class="max-security-note">
           <strong data-i18n="benefits.maxSecurityTitle">Режим максимальной безопасности</strong>
-          <p data-i18n-html="benefits.maxSecurityText">Для режима максимальной безопасности используйте фиксированный Cloudflare Pages deploy <a href="https://3cf77373.steamguardonline.pages.dev" target="_blank" rel="noopener noreferrer"><code>https://3cf77373.steamguardonline.pages.dev</code></a>. Эта версия привязана к конкретной сборке, исходному коду и commit в GitHub: уже опубликованное содержимое по этому адресу нельзя изменить извне или незаметно заменить без создания нового deploy. Поэтому ссылка даёт проверяемую гарантию неизменности кода именно этой версии сайта перед вводом maFile или ID. Общая безопасность также зависит от вашего устройства, браузера и проверки адреса в строке браузера.</p>
+          <p id="max-security-text" data-i18n-html="benefits.maxSecurityText">Для режима максимальной безопасности используйте фиксированный Cloudflare Pages deploy <a href="https://3cf77373.steamguardonline.pages.dev" target="_blank" rel="noopener noreferrer"><code>https://3cf77373.steamguardonline.pages.dev</code></a>. Эта версия привязана к конкретной сборке, исходному коду и commit в GitHub: уже опубликованное содержимое по этому адресу нельзя изменить извне или незаметно заменить без создания нового deploy. Поэтому ссылка даёт проверяемую гарантию неизменности кода именно этой версии сайта перед вводом maFile или ID. Общая безопасность также зависит от вашего устройства, браузера и проверки адреса в строке браузера.</p>
+          <div id="deploy-check-panel" class="deploy-check-panel">
+            <div class="deploy-check-header">
+              <strong data-i18n="deployCheck.title">Проверка deploy и целостности</strong>
+              <span id="deploy-check-status" class="deploy-check-status" data-kind="loading" data-i18n="deployCheck.loading">Загрузка manifest...</span>
+            </div>
+            <p data-i18n="deployCheck.help">Сайт загружает version.json текущего deploy и показывает commit, адрес сборки и SHA-256 хэши критичных файлов. Это помогает вручную сверить опубликованную версию с исходным кодом.</p>
+            <div id="deploy-check-meta" class="deploy-check-meta" aria-live="polite"></div>
+            <div id="deploy-check-files" class="deploy-check-files"></div>
+          </div>
         </div>
 
         <div id="flow-details-panel" class="flow-details-panel" hidden>

@@ -5,7 +5,11 @@
   "type": "module",
   "description": "Client-side encrypted online Steam Desktop Authenticator for Cloudflare Pages and KV",
   "scripts": {
+    "predev": "npm run version:manifest",
     "dev": "npx wrangler@latest pages dev public --kv=SDA_KV",
+    "build": "npm run version:manifest",
+    "version:manifest": "node scripts/generate-version.mjs",
+    "predeploy": "npm run version:manifest",
     "deploy": "npx wrangler@latest pages deploy public",
     "test": "node --test"
   },

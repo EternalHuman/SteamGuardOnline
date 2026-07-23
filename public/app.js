@@ -37,6 +37,10 @@ const elements = {
   siteTabPanels: [...document.querySelectorAll("[data-site-panel]")],
   flowToggle: document.querySelector("#flow-toggle"),
   flowDetailsPanel: document.querySelector("#flow-details-panel"),
+  maxSecurityText: document.querySelector("#max-security-text"),
+  deployCheckStatus: document.querySelector("#deploy-check-status"),
+  deployCheckMeta: document.querySelector("#deploy-check-meta"),
+  deployCheckFiles: document.querySelector("#deploy-check-files"),
   accessForm: document.querySelector("#access-form"),
   accessCode: document.querySelector("#access-code"),
   accessSubmit: document.querySelector("#access-submit"),
@@ -115,6 +119,10 @@ const AUTH_PANEL_SCROLL_TOP_FALLBACK_OFFSET = 18;
 const AUTH_PANEL_SCROLL_HIGHLIGHT_MS = 2000;
 const VAULT_MODE_FADE_OUT_MS = 120;
 const VAULT_MODE_ANIMATION_MS = 380;
+const FIXED_DEPLOY_URL = "https://3cf77373.steamguardonline.pages.dev";
+const FIXED_DEPLOY_EXAMPLE_URL = "https://1a2b3c4d.steamguardonline.pages.dev";
+const FIXED_DEPLOY_HOST_PATTERN = /^(?=.*\d)[a-z0-9]{7,}\.steamguardonline\.pages\.dev$/i;
+const VERSION_MANIFEST_URL = "/version.json";
 const PROFILE_PIN_MIN_LENGTH = 3;
 const PROFILE_PIN_MAX_LENGTH = 6;
 const PIN_KDF_ITERATIONS = 260_000;
@@ -325,7 +333,26 @@ const TRANSLATIONS = {
     "benefits.title": "Прозрачная защита.<br />Контроль на вашей стороне.",
     "benefits.maxSecurityTitle": "Режим максимальной безопасности",
     "benefits.maxSecurityText":
-      "Для режима максимальной безопасности используйте фиксированный Cloudflare Pages deploy <a href='https://3cf77373.steamguardonline.pages.dev' target='_blank' rel='noopener noreferrer'><code>https://3cf77373.steamguardonline.pages.dev</code></a>. Эта версия привязана к конкретной сборке, исходному коду и commit в GitHub: уже опубликованное содержимое по этому адресу нельзя изменить извне или незаметно заменить без создания нового deploy. Поэтому ссылка даёт проверяемую гарантию неизменности кода именно этой версии сайта перед вводом maFile или ID. Общая безопасность также зависит от вашего устройства, браузера и проверки адреса в строке браузера.",
+      "Сейчас открыт обычный адрес сайта. Для режима максимальной безопасности используйте фиксированный Cloudflare Pages deploy {deployLink}. Адрес такого формата, например {deployExample}, привязан к конкретной сборке, исходному коду и commit в GitHub. Содержимое уже опубликованного deploy нельзя незаметно заменить без создания новой версии, поэтому такую ссылку можно использовать как проверенную зафиксированную версию сайта перед вводом maFile или ID.",
+    "benefits.maxSecurityTextFixed":
+      "Вы находитесь на статичной версии Cloudflare Pages deploy. Адрес такого формата, например {deployExample}, привязан к конкретной сборке, исходному коду и commit в GitHub. Содержимое уже опубликованного deploy нельзя незаметно заменить без создания новой версии, поэтому эту страницу можно использовать как проверенную зафиксированную версию сайта перед вводом maFile или ID. Ниже показаны commit и SHA-256 хэши критичных файлов для ручной проверки.",
+    "deployCheck.title": "Проверка deploy и целостности",
+    "deployCheck.loading": "Загрузка manifest...",
+    "deployCheck.readyFixed": "Открыт фиксированный deploy",
+    "deployCheck.readyOther": "Открыт другой адрес",
+    "deployCheck.error": "Manifest недоступен",
+    "deployCheck.help":
+      "Сайт загружает version.json текущего deploy и показывает commit, адрес сборки и SHA-256 хэши критичных файлов. Это помогает вручную сверить опубликованную версию с исходным кодом.",
+    "deployCheck.deployUrl": "Фиксированный deploy",
+    "deployCheck.currentHost": "Текущий адрес",
+    "deployCheck.commit": "GitHub commit",
+    "deployCheck.generatedAt": "Manifest создан",
+    "deployCheck.source": "Исходный код",
+    "deployCheck.gitStatus": "Состояние сборки",
+    "deployCheck.gitClean": "Без незакоммиченных изменений",
+    "deployCheck.gitDirty": "В сборке были незакоммиченные изменения",
+    "deployCheck.hashes": "SHA-256 критичных файлов",
+    "deployCheck.notAvailable": "нет данных",
     "benefits.openTitle": "Полностью open-source",
     "benefits.openText": "Клиентская криптография, Pages Function и схема хранения доступны для проверки и собственного deploy.",
     "benefits.openLink": "Открыть исходный код",
@@ -563,7 +590,26 @@ const TRANSLATIONS = {
     "benefits.title": "Transparent protection.<br />Control stays with you.",
     "benefits.maxSecurityTitle": "Maximum security mode",
     "benefits.maxSecurityText":
-      "For maximum security mode, use the fixed Cloudflare Pages deploy <a href='https://3cf77373.steamguardonline.pages.dev' target='_blank' rel='noopener noreferrer'><code>https://3cf77373.steamguardonline.pages.dev</code></a>. This version is tied to a specific build, source code, and GitHub commit: already published content at this address cannot be changed externally or silently replaced without creating a new deploy. The link therefore gives a verifiable guarantee that the code of this exact site version is unchanged before entering a maFile or ID. Overall safety also depends on your device, browser, and checking the address bar.",
+      "The regular site address is open right now. For maximum security mode, use the fixed Cloudflare Pages deploy {deployLink}. An address in this format, for example {deployExample}, is tied to a specific build, source code, and GitHub commit. Already published deploy content cannot be silently replaced without creating a new version, so this kind of link can be used as a verified pinned site version before entering a maFile or ID.",
+    "benefits.maxSecurityTextFixed":
+      "You are on a static Cloudflare Pages deploy version. An address in this format, for example {deployExample}, is tied to a specific build, source code, and GitHub commit. Already published deploy content cannot be silently replaced without creating a new version, so this page can be used as a verified pinned site version before entering a maFile or ID. The commit and SHA-256 hashes of critical files are shown below for manual verification.",
+    "deployCheck.title": "Deploy and integrity check",
+    "deployCheck.loading": "Loading manifest...",
+    "deployCheck.readyFixed": "Fixed deploy is open",
+    "deployCheck.readyOther": "Different address is open",
+    "deployCheck.error": "Manifest is unavailable",
+    "deployCheck.help":
+      "The site loads version.json from the current deploy and shows the commit, deploy URL, and SHA-256 hashes of critical files. This helps you manually compare the published version with the source code.",
+    "deployCheck.deployUrl": "Fixed deploy",
+    "deployCheck.currentHost": "Current address",
+    "deployCheck.commit": "GitHub commit",
+    "deployCheck.generatedAt": "Manifest created",
+    "deployCheck.source": "Source code",
+    "deployCheck.gitStatus": "Build state",
+    "deployCheck.gitClean": "No uncommitted changes",
+    "deployCheck.gitDirty": "The build had uncommitted changes",
+    "deployCheck.hashes": "SHA-256 critical file hashes",
+    "deployCheck.notAvailable": "not available",
     "benefits.openTitle": "Fully open-source",
     "benefits.openText": "Client-side cryptography, Pages Function, and the storage model are available for review and self-deploy.",
     "benefits.openLink": "Open source code",
@@ -796,7 +842,26 @@ const TRANSLATIONS = {
     "benefits.title": "透明保护。<br />控制权由你掌握。",
     "benefits.maxSecurityTitle": "最高安全模式",
     "benefits.maxSecurityText":
-      "最高安全模式请使用固定的 Cloudflare Pages deploy：<a href='https://3cf77373.steamguardonline.pages.dev' target='_blank' rel='noopener noreferrer'><code>https://3cf77373.steamguardonline.pages.dev</code></a>。此版本绑定到特定构建、源代码和 GitHub commit：该地址下已发布的内容不能被外部修改，也不能在不创建新 deploy 的情况下被悄悄替换。因此，在输入 maFile 或 ID 前，此链接可验证地保证该网站版本的代码未被更改。整体安全性还取决于你的设备、浏览器以及地址栏中的网址检查。",
+      "当前打开的是普通站点地址。最高安全模式请使用固定的 Cloudflare Pages deploy：{deployLink}。这种格式的地址，例如 {deployExample}，会绑定到特定构建、源代码和 GitHub commit。已经发布的 deploy 内容不能在不创建新版本的情况下被悄悄替换，因此这种链接可作为输入 maFile 或 ID 前可验证的固定网站版本。",
+    "benefits.maxSecurityTextFixed":
+      "你正在使用静态 Cloudflare Pages deploy 版本。这种格式的地址，例如 {deployExample}，会绑定到特定构建、源代码和 GitHub commit。已经发布的 deploy 内容不能在不创建新版本的情况下被悄悄替换，因此此页面可作为输入 maFile 或 ID 前可验证的固定网站版本。下方显示 commit 和关键文件的 SHA-256 哈希，便于手动检查。",
+    "deployCheck.title": "Deploy 与完整性检查",
+    "deployCheck.loading": "正在加载 manifest...",
+    "deployCheck.readyFixed": "当前打开的是固定 deploy",
+    "deployCheck.readyOther": "当前打开的是其他地址",
+    "deployCheck.error": "Manifest 不可用",
+    "deployCheck.help":
+      "网站会从当前 deploy 加载 version.json，并显示 commit、deploy 地址以及关键文件的 SHA-256 哈希。这样可以手动对照已发布版本和源代码。",
+    "deployCheck.deployUrl": "固定 deploy",
+    "deployCheck.currentHost": "当前地址",
+    "deployCheck.commit": "GitHub commit",
+    "deployCheck.generatedAt": "Manifest 创建时间",
+    "deployCheck.source": "源代码",
+    "deployCheck.gitStatus": "构建状态",
+    "deployCheck.gitClean": "没有未提交的更改",
+    "deployCheck.gitDirty": "构建时存在未提交的更改",
+    "deployCheck.hashes": "关键文件 SHA-256 哈希",
+    "deployCheck.notAvailable": "无数据",
     "benefits.openTitle": "完全开源",
     "benefits.openText": "客户端加密、Pages Function 和存储模型都可审查，也可自行部署。",
     "benefits.openLink": "打开源代码",
@@ -1021,7 +1086,26 @@ const TRANSLATIONS = {
     "benefits.title": "Protección transparente.<br />El control queda en tus manos.",
     "benefits.maxSecurityTitle": "Modo de máxima seguridad",
     "benefits.maxSecurityText":
-      "Para el modo de máxima seguridad, usa el deploy fijo de Cloudflare Pages <a href='https://3cf77373.steamguardonline.pages.dev' target='_blank' rel='noopener noreferrer'><code>https://3cf77373.steamguardonline.pages.dev</code></a>. Esta versión está vinculada a una build, código fuente y commit de GitHub concretos: el contenido ya publicado en esta dirección no puede modificarse desde fuera ni reemplazarse silenciosamente sin crear un nuevo deploy. Por eso el enlace ofrece una garantía verificable de que el código de esta versión exacta del sitio no ha cambiado antes de introducir un maFile o ID. La seguridad general también depende de tu dispositivo, navegador y de comprobar la dirección en la barra del navegador.",
+      "Ahora está abierta la dirección normal del sitio. Para el modo de máxima seguridad, usa el deploy fijo de Cloudflare Pages {deployLink}. Una dirección con este formato, por ejemplo {deployExample}, está vinculada a una build, código fuente y commit de GitHub concretos. El contenido ya publicado del deploy no puede reemplazarse silenciosamente sin crear una nueva versión, así que este tipo de enlace puede usarse como versión fija verificada antes de introducir un maFile o ID.",
+    "benefits.maxSecurityTextFixed":
+      "Estás en una versión estática de Cloudflare Pages deploy. Una dirección con este formato, por ejemplo {deployExample}, está vinculada a una build, código fuente y commit de GitHub concretos. El contenido ya publicado del deploy no puede reemplazarse silenciosamente sin crear una nueva versión, así que esta página puede usarse como versión fija verificada antes de introducir un maFile o ID. Abajo se muestran el commit y los hashes SHA-256 de archivos críticos para verificación manual.",
+    "deployCheck.title": "Comprobación de deploy e integridad",
+    "deployCheck.loading": "Cargando manifest...",
+    "deployCheck.readyFixed": "Deploy fijo abierto",
+    "deployCheck.readyOther": "Dirección diferente abierta",
+    "deployCheck.error": "Manifest no disponible",
+    "deployCheck.help":
+      "El sitio carga version.json desde el deploy actual y muestra el commit, la URL del deploy y los hashes SHA-256 de archivos críticos. Esto ayuda a comparar manualmente la versión publicada con el código fuente.",
+    "deployCheck.deployUrl": "Deploy fijo",
+    "deployCheck.currentHost": "Dirección actual",
+    "deployCheck.commit": "Commit de GitHub",
+    "deployCheck.generatedAt": "Manifest creado",
+    "deployCheck.source": "Código fuente",
+    "deployCheck.gitStatus": "Estado de la build",
+    "deployCheck.gitClean": "Sin cambios sin commit",
+    "deployCheck.gitDirty": "La build tenía cambios sin commit",
+    "deployCheck.hashes": "Hashes SHA-256 de archivos críticos",
+    "deployCheck.notAvailable": "sin datos",
     "benefits.openTitle": "Totalmente open-source",
     "benefits.openText": "La criptografía del cliente, Pages Function y el modelo de almacenamiento están disponibles para revisión y despliegue propio.",
     "benefits.openLink": "Abrir código fuente",
@@ -1246,7 +1330,26 @@ const TRANSLATIONS = {
     "benefits.title": "Proteção transparente.<br />O controle fica com você.",
     "benefits.maxSecurityTitle": "Modo de segurança máxima",
     "benefits.maxSecurityText":
-      "Para o modo de segurança máxima, use o deploy fixo do Cloudflare Pages <a href='https://3cf77373.steamguardonline.pages.dev' target='_blank' rel='noopener noreferrer'><code>https://3cf77373.steamguardonline.pages.dev</code></a>. Esta versão fica vinculada a uma build, código-fonte e commit específicos no GitHub: o conteúdo já publicado nesse endereço não pode ser alterado externamente nem substituído silenciosamente sem criar um novo deploy. Por isso, o link oferece uma garantia verificável de que o código desta versão exata do site não foi alterado antes de inserir um maFile ou ID. A segurança geral também depende do seu dispositivo, navegador e da conferência do endereço na barra do navegador.",
+      "O endereço normal do site está aberto agora. Para o modo de segurança máxima, use o deploy fixo do Cloudflare Pages {deployLink}. Um endereço nesse formato, por exemplo {deployExample}, fica vinculado a uma build, código-fonte e commit específicos no GitHub. O conteúdo já publicado do deploy não pode ser substituído silenciosamente sem criar uma nova versão, então esse tipo de link pode ser usado como uma versão fixa verificada antes de inserir um maFile ou ID.",
+    "benefits.maxSecurityTextFixed":
+      "Você está em uma versão estática do Cloudflare Pages deploy. Um endereço nesse formato, por exemplo {deployExample}, fica vinculado a uma build, código-fonte e commit específicos no GitHub. O conteúdo já publicado do deploy não pode ser substituído silenciosamente sem criar uma nova versão, então esta página pode ser usada como uma versão fixa verificada antes de inserir um maFile ou ID. Abaixo aparecem o commit e os hashes SHA-256 de arquivos críticos para verificação manual.",
+    "deployCheck.title": "Verificação de deploy e integridade",
+    "deployCheck.loading": "Carregando manifest...",
+    "deployCheck.readyFixed": "Deploy fixo aberto",
+    "deployCheck.readyOther": "Endereço diferente aberto",
+    "deployCheck.error": "Manifest indisponível",
+    "deployCheck.help":
+      "O site carrega version.json do deploy atual e mostra o commit, a URL do deploy e hashes SHA-256 de arquivos críticos. Isso ajuda a comparar manualmente a versão publicada com o código-fonte.",
+    "deployCheck.deployUrl": "Deploy fixo",
+    "deployCheck.currentHost": "Endereço atual",
+    "deployCheck.commit": "Commit do GitHub",
+    "deployCheck.generatedAt": "Manifest criado",
+    "deployCheck.source": "Código-fonte",
+    "deployCheck.gitStatus": "Estado da build",
+    "deployCheck.gitClean": "Sem alterações sem commit",
+    "deployCheck.gitDirty": "A build tinha alterações sem commit",
+    "deployCheck.hashes": "Hashes SHA-256 de arquivos críticos",
+    "deployCheck.notAvailable": "sem dados",
     "benefits.openTitle": "Totalmente open-source",
     "benefits.openText": "A criptografia do cliente, Pages Function e o modelo de armazenamento estão disponíveis para revisão e deploy próprio.",
     "benefits.openLink": "Abrir código-fonte",
@@ -1344,6 +1447,8 @@ const state = {
   authPanelHighlightTimer: null,
   currentInfoPage: null,
   vaultModeAnimation: null,
+  deployManifest: null,
+  deployManifestError: null,
 };
 
 class ApiRequestError extends Error {
@@ -1463,6 +1568,220 @@ function setElementText(element, value) {
   } else {
     element.textContent = value;
   }
+}
+
+function clearElement(element) {
+  if (element) element.replaceChildren();
+}
+
+function formatDeployDate(value) {
+  if (!value) return t("deployCheck.notAvailable");
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  try {
+    return new Intl.DateTimeFormat(currentLanguage, {
+      dateStyle: "medium",
+      timeStyle: "medium",
+    }).format(date);
+  } catch {
+    return date.toISOString();
+  }
+}
+
+function formatDeployBytes(value) {
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes < 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  return `${(bytes / 1024).toLocaleString(currentLanguage, { maximumFractionDigits: 1 })} KB`;
+}
+
+function setDeployCheckStatus(kind, message) {
+  if (!elements.deployCheckStatus) return;
+  elements.deployCheckStatus.dataset.kind = kind;
+  elements.deployCheckStatus.textContent = message;
+}
+
+function safeHttpHref(value) {
+  if (!value) return "";
+  try {
+    const url = new URL(value, window.location.origin);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#39;";
+      default:
+        return char;
+    }
+  });
+}
+
+function deployHostFromUrl(value) {
+  try {
+    return new URL(value).host.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function currentFixedDeployUrl() {
+  return state.deployManifest?.deployUrl || FIXED_DEPLOY_URL;
+}
+
+function deployExampleHtml() {
+  return `<code>${escapeHtml(FIXED_DEPLOY_EXAMPLE_URL)}</code>`;
+}
+
+function fixedDeployLinkHtml() {
+  const deployUrl = currentFixedDeployUrl();
+  const href = safeHttpHref(deployUrl) || FIXED_DEPLOY_URL;
+  return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"><code>${escapeHtml(deployUrl)}</code></a>`;
+}
+
+function isCurrentFixedDeployUrl(deployUrl = currentFixedDeployUrl()) {
+  const deployHost = deployHostFromUrl(deployUrl);
+  const currentHost = window.location.host.toLowerCase();
+  return Boolean(deployHost && deployHost === currentHost && FIXED_DEPLOY_HOST_PATTERN.test(currentHost));
+}
+
+function renderMaxSecurityText() {
+  if (!elements.maxSecurityText) return;
+  const key = isCurrentFixedDeployUrl() ? "benefits.maxSecurityTextFixed" : "benefits.maxSecurityText";
+  elements.maxSecurityText.innerHTML = t(key, {
+    deployExample: deployExampleHtml(),
+    deployLink: fixedDeployLinkHtml(),
+  });
+}
+
+function appendDeployMetaRow(labelKey, value, href = "") {
+  if (!elements.deployCheckMeta) return;
+
+  const row = document.createElement("div");
+  row.className = "deploy-check-row";
+
+  const label = document.createElement("span");
+  label.className = "deploy-check-label";
+  label.textContent = t(labelKey);
+
+  const safeHref = safeHttpHref(href);
+  const valueElement = safeHref ? document.createElement("a") : document.createElement("span");
+  valueElement.className = "deploy-check-value";
+  valueElement.textContent = value || t("deployCheck.notAvailable");
+  if (safeHref) {
+    valueElement.href = safeHref;
+    valueElement.target = "_blank";
+    valueElement.rel = "noopener noreferrer";
+  }
+
+  row.append(label, valueElement);
+  elements.deployCheckMeta.append(row);
+}
+
+function renderDeployVerification() {
+  if (!elements.deployCheckStatus || !elements.deployCheckMeta || !elements.deployCheckFiles) return;
+
+  clearElement(elements.deployCheckMeta);
+  clearElement(elements.deployCheckFiles);
+
+  if (state.deployManifestError) {
+    setDeployCheckStatus("error", t("deployCheck.error"));
+    return;
+  }
+
+  const manifest = state.deployManifest;
+  if (!manifest) {
+    setDeployCheckStatus("loading", t("deployCheck.loading"));
+    return;
+  }
+
+  const fixedDeployOpen = isCurrentFixedDeployUrl(manifest.deployUrl);
+  const deployStatusKey = fixedDeployOpen ? "deployCheck.readyFixed" : "deployCheck.readyOther";
+  setDeployCheckStatus(fixedDeployOpen ? "success" : "warning", t(deployStatusKey));
+
+  appendDeployMetaRow("deployCheck.deployUrl", manifest.deployUrl, manifest.deployUrl);
+  appendDeployMetaRow("deployCheck.currentHost", window.location.origin);
+  appendDeployMetaRow(
+    "deployCheck.commit",
+    manifest.commitShort || manifest.commit,
+    manifest.commitUrl && manifest.commit !== "unknown" ? manifest.commitUrl : "",
+  );
+  appendDeployMetaRow("deployCheck.generatedAt", formatDeployDate(manifest.generatedAt));
+  appendDeployMetaRow("deployCheck.source", manifest.sourceRepository, manifest.sourceRepository);
+  appendDeployMetaRow(
+    "deployCheck.gitStatus",
+    t(manifest.gitDirty ? "deployCheck.gitDirty" : "deployCheck.gitClean"),
+  );
+
+  const title = document.createElement("div");
+  title.className = "deploy-files-title";
+  title.textContent = t("deployCheck.hashes");
+  elements.deployCheckFiles.append(title);
+
+  for (const file of Array.isArray(manifest.files) ? manifest.files : []) {
+    const row = document.createElement("div");
+    row.className = "deploy-file-row";
+
+    const label = document.createElement("div");
+    label.className = "deploy-file-label";
+    const nameElement = document.createElement("span");
+    nameElement.textContent = file.label || file.path || t("deployCheck.notAvailable");
+
+    const pathElement = document.createElement("span");
+    pathElement.className = "deploy-file-path";
+    pathElement.textContent = file.publicPath || file.path || "";
+    label.append(nameElement, pathElement);
+
+    const hash = document.createElement("div");
+    hash.className = "deploy-file-hash";
+    const code = document.createElement("code");
+    code.textContent = file.sha256 || t("deployCheck.notAvailable");
+    hash.append(code);
+
+    const size = document.createElement("span");
+    size.className = "deploy-file-size";
+    size.textContent = formatDeployBytes(file.bytes);
+
+    row.append(label, hash, size);
+    elements.deployCheckFiles.append(row);
+  }
+}
+
+async function loadDeployVerification() {
+  renderDeployVerification();
+  try {
+    const response = await fetch(VERSION_MANIFEST_URL, {
+      credentials: "omit",
+      cache: "no-store",
+      headers: { accept: "application/json" },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const manifest = await response.json();
+    if (!manifest || !Array.isArray(manifest.files)) throw new Error("Invalid deploy manifest.");
+
+    state.deployManifest = manifest;
+    state.deployManifestError = null;
+  } catch (error) {
+    state.deployManifest = null;
+    state.deployManifestError = error;
+  }
+  renderMaxSecurityText();
+  renderDeployVerification();
 }
 
 function mountSavedProfilesMenu() {
@@ -1660,6 +1979,8 @@ function applyTranslations() {
   syncVisibilityToggle(elements.customAlias, elements.customAliasVisibility);
   syncVisibilityToggle(elements.savedProfilePin, elements.savedProfilePinVisibility);
   syncVisibilityToggle(elements.rememberImportedPin, elements.rememberImportedPinVisibility);
+  renderMaxSecurityText();
+  renderDeployVerification();
 
   for (const button of document.querySelectorAll("[aria-busy='true'][data-busy-key]")) {
     setElementText(button, t(button.dataset.busyKey));
@@ -3605,6 +3926,7 @@ setSelectedFiles([]);
 applyRouteLayout();
 applyTranslations();
 checkService();
+loadDeployVerification();
 if (!state.currentInfoPage) submitAccessCodeFromUrl();
 
 // Prevent accidental form submission when a copied primary ID is selected.

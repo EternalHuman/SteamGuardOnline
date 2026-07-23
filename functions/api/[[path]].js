@@ -2,9 +2,16 @@ const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store, max-age=0",
   pragma: "no-cache",
+  "content-security-policy": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
   "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "x-permitted-cross-domain-policies": "none",
   "referrer-policy": "no-referrer",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+  "cross-origin-opener-policy": "same-origin",
   "cross-origin-resource-policy": "same-origin",
+  "origin-agent-cluster": "?1",
+  "strict-transport-security": "max-age=31536000",
 };
 
 const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
