@@ -325,7 +325,7 @@ const TRANSLATIONS = {
     "benefits.title": "Прозрачная защита.<br />Контроль на вашей стороне.",
     "benefits.maxSecurityTitle": "Режим максимальной безопасности",
     "benefits.maxSecurityText":
-      "Вы находитесь на статичной версии Cloudflare Pages deploy. Адрес такого формата, например <code>https://a528d1f9.steamguardonline.pages.dev</code>, привязан к конкретной сборке, исходному коду и commit в GitHub. Содержимое уже опубликованного deploy нельзя незаметно заменить без создания новой версии, поэтому такую ссылку можно использовать как проверенный снимок сайта перед вводом maFile или ID.",
+      "Вы находитесь на статичной версии Cloudflare Pages deploy. Адрес такого формата, например <code>https://1a2b3c4d.steamguardonline.pages.dev</code>, привязан к конкретной сборке, исходному коду и commit в GitHub. Содержимое уже опубликованного deploy нельзя незаметно заменить без создания новой версии, поэтому такую ссылку можно использовать как проверенную зафиксированную версию сайта перед вводом maFile или ID.",
     "benefits.openTitle": "Полностью open-source",
     "benefits.openText": "Клиентская криптография, Pages Function и схема хранения доступны для проверки и собственного deploy.",
     "benefits.openLink": "Открыть исходный код",
@@ -563,7 +563,7 @@ const TRANSLATIONS = {
     "benefits.title": "Transparent protection.<br />Control stays with you.",
     "benefits.maxSecurityTitle": "Maximum security mode",
     "benefits.maxSecurityText":
-      "You are on a static Cloudflare Pages deploy. A URL in this format, for example <code>https://a528d1f9.steamguardonline.pages.dev</code>, is tied to a specific build, source code, and GitHub commit. An already published deploy cannot be silently changed without creating a new version, so this link can be used as a verified snapshot before entering a maFile or ID.",
+      "You are on a static Cloudflare Pages deploy. A URL in this format, for example <code>https://1a2b3c4d.steamguardonline.pages.dev</code>, is tied to a specific build, source code, and GitHub commit. An already published deploy cannot be silently changed without creating a new version, so this link can be used as a verified fixed version of the site before entering a maFile or ID.",
     "benefits.openTitle": "Fully open-source",
     "benefits.openText": "Client-side cryptography, Pages Function, and the storage model are available for review and self-deploy.",
     "benefits.openLink": "Open source code",
@@ -796,7 +796,7 @@ const TRANSLATIONS = {
     "benefits.title": "透明保护。<br />控制权由你掌握。",
     "benefits.maxSecurityTitle": "最高安全模式",
     "benefits.maxSecurityText":
-      "你当前位于静态 Cloudflare Pages deploy。类似 <code>https://a528d1f9.steamguardonline.pages.dev</code> 的地址会绑定到特定构建、源代码和 GitHub commit。已发布的 deploy 不能在不创建新版本的情况下被悄悄替换，因此这个链接可在输入 maFile 或 ID 前作为已验证的网站快照使用。",
+      "你当前位于静态 Cloudflare Pages deploy。类似 <code>https://1a2b3c4d.steamguardonline.pages.dev</code> 的地址会绑定到特定构建、源代码和 GitHub commit。已发布的 deploy 不能在不创建新版本的情况下被悄悄替换，因此这个链接可在输入 maFile 或 ID 前作为已验证的固定网站版本使用。",
     "benefits.openTitle": "完全开源",
     "benefits.openText": "客户端加密、Pages Function 和存储模型都可审查，也可自行部署。",
     "benefits.openLink": "打开源代码",
@@ -1021,7 +1021,7 @@ const TRANSLATIONS = {
     "benefits.title": "Protección transparente.<br />El control queda en tus manos.",
     "benefits.maxSecurityTitle": "Modo de máxima seguridad",
     "benefits.maxSecurityText":
-      "Estás en un deploy estático de Cloudflare Pages. Una URL con este formato, por ejemplo <code>https://a528d1f9.steamguardonline.pages.dev</code>, está vinculada a una build, código fuente y commit de GitHub concretos. Un deploy ya publicado no puede cambiarse de forma silenciosa sin crear una nueva versión, así que este enlace puede usarse como una instantánea verificada antes de introducir un maFile o ID.",
+      "Estás en un deploy estático de Cloudflare Pages. Una URL con este formato, por ejemplo <code>https://1a2b3c4d.steamguardonline.pages.dev</code>, está vinculada a una build, código fuente y commit de GitHub concretos. Un deploy ya publicado no puede cambiarse de forma silenciosa sin crear una nueva versión, así que este enlace puede usarse como una versión fija verificada del sitio antes de introducir un maFile o ID.",
     "benefits.openTitle": "Totalmente open-source",
     "benefits.openText": "La criptografía del cliente, Pages Function y el modelo de almacenamiento están disponibles para revisión y despliegue propio.",
     "benefits.openLink": "Abrir código fuente",
@@ -1246,7 +1246,7 @@ const TRANSLATIONS = {
     "benefits.title": "Proteção transparente.<br />O controle fica com você.",
     "benefits.maxSecurityTitle": "Modo de segurança máxima",
     "benefits.maxSecurityText":
-      "Você está em um deploy estático do Cloudflare Pages. Uma URL nesse formato, por exemplo <code>https://a528d1f9.steamguardonline.pages.dev</code>, fica vinculada a uma build, código-fonte e commit específicos no GitHub. Um deploy já publicado não pode ser alterado silenciosamente sem criar uma nova versão, então esse link pode ser usado como um snapshot verificado antes de inserir um maFile ou ID.",
+      "Você está em um deploy estático do Cloudflare Pages. Uma URL nesse formato, por exemplo <code>https://1a2b3c4d.steamguardonline.pages.dev</code>, fica vinculada a uma build, código-fonte e commit específicos no GitHub. Um deploy já publicado não pode ser alterado silenciosamente sem criar uma nova versão, então esse link pode ser usado como uma versão fixa verificada do site antes de inserir um maFile ou ID.",
     "benefits.openTitle": "Totalmente open-source",
     "benefits.openText": "A criptografia do cliente, Pages Function e o modelo de armazenamento estão disponíveis para revisão e deploy próprio.",
     "benefits.openLink": "Abrir código-fonte",

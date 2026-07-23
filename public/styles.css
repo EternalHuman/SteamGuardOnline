@@ -2505,7 +2505,7 @@ body[data-page="api"] .site-info-panels {
 .max-security-note {
   display: grid;
   gap: 8px;
-  margin-top: 26px;
+  margin-top: 18px;
   padding: 16px 18px;
   border: 1px solid rgba(98, 217, 165, 0.18);
   border-left: 3px solid var(--green);
