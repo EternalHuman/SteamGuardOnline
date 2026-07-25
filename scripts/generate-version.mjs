@@ -6,8 +6,9 @@ import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const fallbackDeployUrl = "https://4391187a.steamguardonline.pages.dev";
-const deployUrl = process.env.SGO_FIXED_DEPLOY_URL || fallbackDeployUrl;
 const sourceRepository = "https://github.com/EternalHuman/SteamGuardOnline";
+const fixedDeployHostPattern = /^(?=.*\d)[a-z0-9]{7,}\.steamguardonline\.pages\.dev$/i;
+const githubCommitPattern = /^[a-f0-9]{40}$/i;
 
 const criticalFiles = [
   { path: "public/index.html", publicPath: "/index.html", label: "index.html" },
@@ -32,6 +33,22 @@ function git(args, fallback = "") {
   }
 }
 
+function normalizeFixedDeployUrl(value) {
+  if (!value) return "";
+  try {
+    const url = new URL(String(value));
+    if (url.protocol !== "https:" || !fixedDeployHostPattern.test(url.host)) return "";
+    return url.origin;
+  } catch {
+    return "";
+  }
+}
+
+function normalizeGithubCommit(value) {
+  const commit = String(value || "").trim();
+  return githubCommitPattern.test(commit) ? commit.toLowerCase() : "";
+}
+
 function isDirtyStatusLine(line) {
   const filePath = line.slice(3).trim().replaceAll("\\", "/");
   return filePath !== "public/version.json";
@@ -47,7 +64,14 @@ async function hashFile(file) {
   };
 }
 
-const commit = git(["rev-parse", "HEAD"], "unknown");
+const deployUrl =
+  normalizeFixedDeployUrl(process.env.CF_PAGES_URL || process.env.SGO_FIXED_DEPLOY_URL || process.env.FIXED_DEPLOY_URL) ||
+  fallbackDeployUrl;
+const gitCommit = normalizeGithubCommit(git(["rev-parse", "HEAD"], ""));
+const commit =
+  normalizeGithubCommit(process.env.CF_PAGES_COMMIT_SHA || process.env.SGO_GITHUB_COMMIT || process.env.GITHUB_COMMIT) ||
+  gitCommit ||
+  "unknown";
 const status = git(["status", "--porcelain"], "");
 const dirty = status.split(/\r?\n/).filter(Boolean).some(isDirtyStatusLine);
 const files = await Promise.all(criticalFiles.map(hashFile));

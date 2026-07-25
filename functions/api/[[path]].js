@@ -21,6 +21,9 @@ const MAX_REQUEST_BYTES = 24_000;
 const IMPORT_RATE_LIMIT = 50;
 const SAVE_SAVED_PROFILE_RATE_LIMIT = 50;
 const SAVED_PROFILE_MAX_PIN_ATTEMPTS = 5;
+const DEFAULT_FIXED_DEPLOY_URL = "https://4391187a.steamguardonline.pages.dev";
+const FIXED_DEPLOY_HOST_PATTERN = /^(?=.*\d)[a-z0-9]{7,}\.steamguardonline\.pages\.dev$/i;
+const GITHUB_COMMIT_PATTERN = /^[a-f0-9]{40}$/i;
 
 class ApiError extends Error {
   constructor(status, message, headers = {}) {
@@ -76,6 +79,41 @@ function assertSameOrigin(request) {
   if (origin !== expectedOrigin) {
     throw new ApiError(403, "Запрос с другого origin отклонён.");
   }
+}
+
+function normalizeFixedDeployUrl(value) {
+  if (!value) return "";
+  try {
+    const url = new URL(String(value));
+    if (url.protocol !== "https:" || !FIXED_DEPLOY_HOST_PATTERN.test(url.host)) return "";
+    return url.origin;
+  } catch {
+    return "";
+  }
+}
+
+function fixedDeployUrlFromEnv(env) {
+  return (
+    normalizeFixedDeployUrl(env?.CF_PAGES_URL || env?.SGO_FIXED_DEPLOY_URL || env?.FIXED_DEPLOY_URL) ||
+    DEFAULT_FIXED_DEPLOY_URL
+  );
+}
+
+function normalizeGithubCommit(value) {
+  const commit = String(value || "").trim();
+  return GITHUB_COMMIT_PATTERN.test(commit) ? commit.toLowerCase() : "";
+}
+
+function githubCommitFromEnv(env) {
+  return normalizeGithubCommit(env?.CF_PAGES_COMMIT_SHA || env?.SGO_GITHUB_COMMIT || env?.GITHUB_COMMIT);
+}
+
+function handleConfig(context) {
+  return jsonResponse({
+    ok: true,
+    fixedDeployUrl: fixedDeployUrlFromEnv(context.env),
+    githubCommit: githubCommitFromEnv(context.env),
+  });
 }
 
 async function readJson(request) {
@@ -563,6 +601,10 @@ async function routeRequest(context) {
 
   if (request.method === "GET" && route === "") {
     return indexHtmlResponse(context);
+  }
+
+  if (request.method === "GET" && route === "config") {
+    return handleConfig(context);
   }
 
   assertConfigured(context.env);

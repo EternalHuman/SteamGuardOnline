@@ -286,3 +286,24 @@ test("GET /api serves the API documentation page without KV", async () => {
   assert.equal(response.status, 200);
   assert.match(await response.text(), /<!doctype html>/i);
 });
+
+test("GET /api/config serves Cloudflare deploy metadata without KV", async () => {
+  const request = new Request("https://example.com/api/config", { method: "GET" });
+  const githubCommit = "355c01b532d9c205c72f1000846cf2a45995c3e7";
+  const response = await onRequest({
+    request,
+    env: {
+      CF_PAGES_URL: "https://abcdef12.steamguardonline.pages.dev/some/path",
+      CF_PAGES_COMMIT_SHA: githubCommit.toUpperCase(),
+      SGO_FIXED_DEPLOY_URL: "https://manual99.steamguardonline.pages.dev",
+      SGO_GITHUB_COMMIT: "1111111111111111111111111111111111111111",
+    },
+  });
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    ok: true,
+    fixedDeployUrl: "https://abcdef12.steamguardonline.pages.dev",
+    githubCommit,
+  });
+});
