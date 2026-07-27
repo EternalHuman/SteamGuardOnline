@@ -67,6 +67,7 @@ body::before {
 
 button,
 input,
+textarea,
 select {
   font: inherit;
 }
@@ -74,6 +75,7 @@ select {
 button,
 a,
 input,
+textarea,
 select,
 .file-drop,
 summary {
@@ -106,6 +108,7 @@ svg {
   input[type="text"],
   input[type="password"],
   input[type="search"],
+  textarea,
   select,
   .inline-button,
   .primary-button,
@@ -132,6 +135,7 @@ svg {
   .flow-details-panel,
   .flow-mini-list.expanded li,
   .flow-list li > span,
+  .note-toast,
   .toast
 ) {
   corner-shape: squircle;
@@ -308,6 +312,7 @@ code {
 }
 
 .site-layout,
+.note-toast,
 .site-footer {
   position: relative;
   z-index: 2;
@@ -992,9 +997,9 @@ code {
 }
 
 input[type="text"],
-input[type="password"] {
+input[type="password"],
+textarea {
   width: 100%;
-  min-height: 49px;
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1006,17 +1011,34 @@ input[type="password"] {
   transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
-input::placeholder {
+input[type="text"],
+input[type="password"] {
+  min-height: 49px;
+}
+
+textarea {
+  min-height: 88px;
+  padding-block: 11px;
+  font-family: var(--font);
+  font-size: 12px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
   color: #657183;
 }
 
-input:focus {
+input:focus,
+textarea:focus {
   border-color: rgba(255, 138, 61, 0.62);
   background: rgba(5, 9, 14, 0.78);
   box-shadow: 0 0 0 4px rgba(255, 138, 61, 0.09);
 }
 
-input:disabled {
+input:disabled,
+textarea:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -2272,8 +2294,8 @@ body[data-page="api"] .site-info-panels {
 
 .code-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 42px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(210px, 0.62fr);
+  gap: 26px;
   align-items: center;
   margin-top: 38px;
   padding: 30px;
@@ -2303,6 +2325,45 @@ body[data-page="api"] .site-info-panels {
   letter-spacing: 0.18em;
   line-height: 1.12;
   text-shadow: 0 8px 32px rgba(255, 138, 61, 0.12);
+}
+
+.profile-note-form {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.profile-note-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted-strong);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.profile-note-label small {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.profile-note-form textarea {
+  min-height: 92px;
+  max-height: 170px;
+}
+
+.profile-note-form .secondary-button {
+  justify-self: start;
+  min-height: 36px;
+}
+
+.profile-note-form .form-status {
+  margin: 0;
 }
 
 .copy-code-button {
@@ -3057,6 +3118,34 @@ body[data-page="api"] .site-info-panels {
   color: white;
 }
 
+.note-toast {
+  position: fixed;
+  z-index: 89;
+  top: var(--note-toast-top, 94px);
+  left: 50%;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 12px 16px;
+  border: 1px solid rgba(98, 217, 165, 0.28);
+  border-radius: 12px;
+  background: rgba(16, 28, 25, 0.97);
+  box-shadow: 0 20px 58px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  overflow-wrap: anywhere;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -18px);
+  transition: opacity 240ms ease, transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.note-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 .toast {
   position: fixed;
   z-index: 100;
@@ -3446,6 +3535,7 @@ body[data-page="api"] .site-info-panels {
   input[type="text"],
   input[type="password"],
   input[type="search"],
+  textarea,
   select,
   .primary-button,
   .secondary-button,

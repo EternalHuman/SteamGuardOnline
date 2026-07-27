@@ -300,15 +300,33 @@ export async function unwrapDataKeyWithPreparedAccess(wrap, prepared) {
 
 export async function createEncryptedPayload(payload) {
   requireWebCrypto();
+  const dataKey = randomBytes(32);
+
+  try {
+    return {
+      dataKey,
+      payload: await encryptPayloadWithDataKey(payload, dataKey),
+    };
+  } catch (error) {
+    dataKey.fill(0);
+    throw error;
+  }
+}
+
+export async function encryptPayloadWithDataKey(payload, dataKeyBytes) {
+  requireWebCrypto();
+  if (!(dataKeyBytes instanceof Uint8Array) || dataKeyBytes.length !== 32) {
+    throw new Error("Некорректный ключ данных.");
+  }
+
   const serialized = JSON.stringify(payload);
   const plaintext = textEncoder.encode(serialized);
   if (plaintext.length > 8_192) {
     throw new Error("Данные maFile слишком велики после безопасной фильтрации.");
   }
 
-  const dataKey = randomBytes(32);
   const iv = randomBytes(12);
-  const aesKey = await importAesKey(dataKey, ["encrypt"]);
+  const aesKey = await importAesKey(dataKeyBytes, ["encrypt"]);
   const ciphertext = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv, additionalData: PAYLOAD_AAD, tagLength: 128 },
     aesKey,
@@ -316,12 +334,9 @@ export async function createEncryptedPayload(payload) {
   );
 
   return {
-    dataKey,
-    payload: {
-      v: 1,
-      iv: toBase64Url(iv),
-      ciphertext: toBase64Url(ciphertext),
-    },
+    v: 1,
+    iv: toBase64Url(iv),
+    ciphertext: toBase64Url(ciphertext),
   };
 }
 

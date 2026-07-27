@@ -5,6 +5,7 @@ import {
   createEncryptedPayload,
   decryptEncryptedPayload,
   disposePreparedAccess,
+  encryptPayloadWithDataKey,
   fromBase64Url,
   generateSteamGuardCode,
   isPrimaryCode,
@@ -78,6 +79,11 @@ const elements = {
   accountLabel: document.querySelector("#account-label"),
   accessKindBadge: document.querySelector("#access-kind-badge"),
   guardCode: document.querySelector("#guard-code"),
+  profileNoteForm: document.querySelector("#profile-note-form"),
+  profileNote: document.querySelector("#profile-note"),
+  profileNoteCount: document.querySelector("#profile-note-count"),
+  profileNoteSubmit: document.querySelector("#profile-note-submit"),
+  profileNoteStatus: document.querySelector("#profile-note-status"),
   countdownValue: document.querySelector("#countdown-value"),
   countdownCircle: document.querySelector("#countdown-circle"),
   copyGuard: document.querySelector("#copy-guard"),
@@ -91,6 +97,7 @@ const elements = {
   removeAlias: document.querySelector("#remove-alias"),
   deleteVault: document.querySelector("#delete-vault"),
   serviceStatus: document.querySelector("#service-status"),
+  noteToast: document.querySelector("#note-toast"),
   toast: document.querySelector("#toast"),
   year: document.querySelector("#year"),
 };
@@ -114,6 +121,7 @@ const SAVED_PROFILE_INTRO_STAGGER_MS = 55;
 const SAVED_PROFILE_INTRO_MAX_STAGGER_MS = 480;
 const SAVED_PROFILE_INTRO_ANIMATION_MS = 1000;
 const SAVED_PROFILE_INTRO_CLOSE_DELAY_MS = 2000;
+const PROFILE_NOTE_MAX_LENGTH = 128;
 const AUTH_PANEL_SCROLL_BOTTOM_OFFSET = 36;
 const AUTH_PANEL_SCROLL_TOP_FALLBACK_OFFSET = 18;
 const AUTH_PANEL_SCROLL_HIGHLIGHT_MS = 2000;
@@ -312,6 +320,14 @@ const TRANSLATIONS = {
     "auth.logout": "Закрыть локальную сессию",
     "auth.seconds": "{count} сек",
     "auth.logoutSuccess": "Локальная сессия очищена.",
+    "note.label": "Заметка профиля",
+    "note.placeholder": "Например: основной аккаунт, трейды, регион...",
+    "note.counter": "{count}/{max}",
+    "note.save": "Сохранить заметку",
+    "note.saved": "Заметка сохранена в KV.",
+    "note.saveError": "Не удалось сохранить заметку.",
+    "note.tooLong": "Заметка должна быть не длиннее {max} символов.",
+    "note.requiresVault": "Откройте аккаунт перед сохранением заметки.",
     "vault.invalidFormat": "Расшифрованное хранилище имеет неизвестный формат.",
     "vault.invalidSharedSecret": "Расшифрованный shared_secret повреждён.",
     "manage.kicker": "Управление",
@@ -575,6 +591,14 @@ const TRANSLATIONS = {
     "auth.logout": "Close local session",
     "auth.seconds": "{count} sec",
     "auth.logoutSuccess": "Local session cleared.",
+    "note.label": "Profile note",
+    "note.placeholder": "For example: main account, trades, region...",
+    "note.counter": "{count}/{max}",
+    "note.save": "Save note",
+    "note.saved": "Note saved to KV.",
+    "note.saveError": "Could not save the note.",
+    "note.tooLong": "Note must be no longer than {max} characters.",
+    "note.requiresVault": "Open an account before saving a note.",
     "vault.invalidFormat": "The decrypted vault has an unknown format.",
     "vault.invalidSharedSecret": "The decrypted shared_secret is damaged.",
     "manage.kicker": "Management",
@@ -1465,6 +1489,8 @@ const state = {
   currentStep: null,
   pendingStep: null,
   serviceKind: "checking",
+  noteToastTimer: null,
+  noteToastHideTimer: null,
   toastTimer: null,
   savedProfiles: [],
   savedProfileSearchQuery: "",
@@ -2116,6 +2142,7 @@ function applyTranslations() {
   syncVisibilityToggle(elements.customAlias, elements.customAliasVisibility);
   syncVisibilityToggle(elements.savedProfilePin, elements.savedProfilePinVisibility);
   syncVisibilityToggle(elements.rememberImportedPin, elements.rememberImportedPinVisibility);
+  updateProfileNoteState();
   renderMaxSecurityText();
   renderDeployVerification();
 
@@ -2186,6 +2213,50 @@ function deleteSavedProfileStorage() {
 
 function safeProfileLabel(value) {
   return String(value || "Steam Guard").replace(/\s+/g, " ").trim().slice(0, 80) || "Steam Guard";
+}
+
+function profileNoteLength(value) {
+  return [...String(value ?? "")].length;
+}
+
+function normalizeProfileNote(value) {
+  return String(value ?? "").replace(/\r\n?/g, "\n").trim();
+}
+
+function validateProfileNote(value) {
+  const note = normalizeProfileNote(value);
+  if (profileNoteLength(note) > PROFILE_NOTE_MAX_LENGTH) {
+    return {
+      ok: false,
+      message: t("note.tooLong", { max: PROFILE_NOTE_MAX_LENGTH }),
+    };
+  }
+  return { ok: true, value: note };
+}
+
+function clampProfileNote(value) {
+  const characters = [...String(value ?? "").replace(/\r\n?/g, "\n")];
+  return characters.length > PROFILE_NOTE_MAX_LENGTH
+    ? characters.slice(0, PROFILE_NOTE_MAX_LENGTH).join("")
+    : characters.join("");
+}
+
+function updateProfileNoteState() {
+  if (!elements.profileNote || !elements.profileNoteCount) return;
+  const clamped = clampProfileNote(elements.profileNote.value);
+  if (clamped !== elements.profileNote.value) {
+    elements.profileNote.value = clamped;
+  }
+  elements.profileNoteCount.textContent = t("note.counter", {
+    count: profileNoteLength(elements.profileNote.value),
+    max: PROFILE_NOTE_MAX_LENGTH,
+  });
+}
+
+function setProfileNoteValue(value) {
+  if (!elements.profileNote) return;
+  elements.profileNote.value = normalizeProfileNote(value);
+  updateProfileNoteState();
 }
 
 function validateProfilePin(pin) {
@@ -3166,6 +3237,35 @@ function showToast(message) {
   }, 2200);
 }
 
+function positionNoteToast() {
+  if (!elements.noteToast) return;
+  const header = document.querySelector(".site-header");
+  const headerBottom = header ? Math.ceil(header.getBoundingClientRect().bottom) : 0;
+  document.documentElement.style.setProperty("--note-toast-top", `${Math.max(12, headerBottom + 10)}px`);
+}
+
+function showNoteToast(message) {
+  if (!elements.noteToast) return;
+
+  positionNoteToast();
+  elements.noteToast.textContent = message;
+  elements.noteToast.hidden = false;
+  elements.noteToast.classList.remove("is-visible");
+  clearTimeout(state.noteToastTimer);
+  clearTimeout(state.noteToastHideTimer);
+
+  window.requestAnimationFrame(() => {
+    elements.noteToast.classList.add("is-visible");
+  });
+
+  state.noteToastTimer = setTimeout(() => {
+    elements.noteToast.classList.remove("is-visible");
+    state.noteToastHideTimer = setTimeout(() => {
+      elements.noteToast.hidden = true;
+    }, 260);
+  }, 3000);
+}
+
 async function copyText(value, successMessage = t("toast.copied")) {
   try {
     await navigator.clipboard.writeText(value);
@@ -3422,7 +3522,18 @@ function validateDecryptedVault(payload) {
   if (!validateSharedSecret(payload.sharedSecret)) {
     throw new Error(t("vault.invalidSharedSecret"));
   }
-  return payload;
+
+  const noteValidation = validateProfileNote(payload.note);
+  if (!noteValidation.ok) {
+    throw new Error(noteValidation.message);
+  }
+
+  const normalized = {
+    ...payload,
+    note: noteValidation.value,
+  };
+  if (!normalized.note) delete normalized.note;
+  return normalized;
 }
 
 function clearActiveVault({ hide = true } = {}) {
@@ -3443,6 +3554,8 @@ function clearActiveVault({ hide = true } = {}) {
   state.hasAlias = false;
 
   elements.guardCode.textContent = "•••••";
+  setProfileNoteValue("");
+  setStatus(elements.profileNoteStatus);
   elements.countdownValue.textContent = "-";
   elements.countdownCircle.style.strokeDashoffset = "100";
   if (hide) {
@@ -3538,6 +3651,7 @@ function activateVault({
   state.hasAlias = Boolean(hasAlias);
 
   elements.accountLabel.textContent = payload.label || "Steam Guard";
+  setProfileNoteValue(state.vaultPayload.note || "");
   setAccessKindBadge(kind);
   elements.managePrimary.hidden = kind !== "primary";
   elements.manageAliasOnly.hidden = kind === "primary";
@@ -3549,6 +3663,46 @@ function activateVault({
   updateGuardCode();
   state.timerId = setInterval(updateGuardCode, 250);
   if (scroll) scrollAuthPanelIntoView();
+}
+
+async function handleProfileNoteSubmit(event) {
+  event.preventDefault();
+  setStatus(elements.profileNoteStatus);
+
+  if (!state.vaultPayload || !(state.dataKey instanceof Uint8Array) || !validateAccessToken(state.activeAccessToken)) {
+    setStatus(elements.profileNoteStatus, t("note.requiresVault"), "error");
+    return;
+  }
+
+  const validation = validateProfileNote(elements.profileNote.value);
+  if (!validation.ok) {
+    setStatus(elements.profileNoteStatus, validation.message, "error");
+    elements.profileNote.focus();
+    return;
+  }
+
+  const nextPayload = { ...state.vaultPayload };
+  if (validation.value) {
+    nextPayload.note = validation.value;
+  } else {
+    delete nextPayload.note;
+  }
+
+  setBusy(elements.profileNoteSubmit, true, "busy.encrypting");
+  try {
+    const encryptedPayload = await encryptPayloadWithDataKey(nextPayload, state.dataKey);
+    await apiPost("/api/update-payload", {
+      token: state.activeAccessToken,
+      payload: encryptedPayload,
+    });
+    state.vaultPayload = validateDecryptedVault(nextPayload);
+    setProfileNoteValue(state.vaultPayload.note || "");
+    showNoteToast(t("note.saved"));
+  } catch (error) {
+    setStatus(elements.profileNoteStatus, error.message || t("note.saveError"), "error");
+  } finally {
+    setBusy(elements.profileNoteSubmit, false);
+  }
 }
 
 async function handleAccessSubmit(event) {
@@ -3852,6 +4006,8 @@ for (const link of elements.siteTabButtons) {
 elements.accessForm.addEventListener("submit", handleAccessSubmit);
 elements.importForm.addEventListener("submit", handleImportSubmit);
 elements.aliasForm.addEventListener("submit", handleAliasSubmit);
+elements.profileNoteForm.addEventListener("submit", handleProfileNoteSubmit);
+elements.profileNote.addEventListener("input", updateProfileNoteState);
 elements.customAlias.addEventListener("input", updateAliasHint);
 elements.rememberImportedPin.addEventListener("input", updateRememberPinState);
 elements.accountsMenuButton?.addEventListener("click", (event) => {
@@ -4045,6 +4201,7 @@ elements.removeAlias.addEventListener("click", handleRemoveAlias);
 elements.deleteVault.addEventListener("click", handleDeleteVault);
 
 window.addEventListener("pagehide", () => clearActiveVault());
+window.addEventListener("resize", positionNoteToast, { passive: true });
 window.addEventListener("popstate", () => {
   applyRouteLayout();
   if (!state.currentInfoPage) submitAccessCodeFromUrl();

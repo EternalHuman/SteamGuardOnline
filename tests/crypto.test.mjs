@@ -25,6 +25,7 @@ const {
   createEncryptedPayload,
   decryptEncryptedPayload,
   disposePreparedAccess,
+  encryptPayloadWithDataKey,
   generateSteamGuardCode,
   prepareAccessCode,
   randomPrimaryCode,
@@ -65,6 +66,20 @@ test("encrypted payload can be opened with the matching access code", async () =
   } finally {
     encrypted.dataKey.fill(0);
     disposePreparedAccess(prepared);
+  }
+});
+
+test("payload can be re-encrypted with the existing data key", async () => {
+  const originalPayload = { v: 1, sharedSecret: TEST_SECRET, label: "test-account" };
+  const updatedPayload = { ...originalPayload, note: "main account" };
+  const encrypted = await createEncryptedPayload(originalPayload);
+
+  try {
+    const updatedEncryptedPayload = await encryptPayloadWithDataKey(updatedPayload, encrypted.dataKey);
+    const decrypted = await decryptEncryptedPayload(updatedEncryptedPayload, encrypted.dataKey);
+    assert.deepEqual(decrypted, updatedPayload);
+  } finally {
+    encrypted.dataKey.fill(0);
   }
 });
 

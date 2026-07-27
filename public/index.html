@@ -63,6 +63,8 @@
       </nav>
     </header>
 
+    <div id="note-toast" class="note-toast" role="status" aria-live="polite" hidden></div>
+
     <div class="site-layout">
       <main class="site-main">
         <section class="hero section-shell" data-home-section>
@@ -332,7 +334,7 @@
               </div>
               <div class="api-info-card">
                 <strong>Лимиты</strong>
-                <p>JSON body - до <code>24 KB</code>. Rate limits считаются по IP за минуту: <code>/api/import</code> и <code>/api/save-saved</code> - 50, <code>/api/lookup</code> - 20, <code>/api/open-saved</code> - 10, <code>/api/alias</code> - 8, <code>/api/delete</code> и <code>/api/delete-saved</code> - 5. При превышении API вернёт <code>429</code> и <code>Retry-After: 60</code>. В интерфейсе за одну загрузку можно выбрать до <code>50</code> maFile.</p>
+                <p>JSON body - до <code>24 KB</code>. Rate limits считаются по IP за минуту: <code>/api/import</code> и <code>/api/save-saved</code> - 50, <code>/api/lookup</code> - 20, <code>/api/update-payload</code> - 12, <code>/api/open-saved</code> - 10, <code>/api/alias</code> - 8, <code>/api/delete</code> и <code>/api/delete-saved</code> - 5. При превышении API вернёт <code>429</code> и <code>Retry-After: 60</code>. В интерфейсе за одну загрузку можно выбрать до <code>50</code> maFile.</p>
               </div>
             </div>
 
@@ -408,6 +410,33 @@
   headers: { "content-type": "application/json" },
   credentials: "omit",
   body: JSON.stringify({ token: lookupToken })
+});</code></pre>
+              </article>
+
+              <article class="api-detail-card">
+                <div>
+                  <code>POST /api/update-payload</code>
+                  <p>Заменяет encrypted payload существующего vault. Используется для сохранения заметки профиля: браузер локально обновляет plaintext payload, шифрует его тем же data key и отправляет в KV только ciphertext.</p>
+                  <div class="api-doc-block">
+                    <strong>Тело запроса</strong>
+                    <ul class="api-field-list">
+                      <li><code>token</code> <span class="api-type">string</span>: lookup token текущего primary ID или alias.</li>
+                      <li><code>payload</code> <span class="api-type">object</span>: новый encrypted payload, <code>{ v: int, iv: string, ciphertext: string }</code>.</li>
+                    </ul>
+                  </div>
+                  <div class="api-doc-block">
+                    <strong>Ответ и ошибки</strong>
+                    <p><code>200</code> возвращает <code>updated: true</code> и <code>updatedAt</code>. <code>404</code> означает, что vault или access token уже недоступны; <code>400</code> - некорректный encrypted payload.</p>
+                  </div>
+                </div>
+                <pre><code>await fetch("/api/update-payload", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  credentials: "omit",
+  body: JSON.stringify({
+    token: lookupToken,
+    payload: { v: 1, iv: "...", ciphertext: "..." }
+  })
 });</code></pre>
               </article>
 
@@ -576,6 +605,24 @@
                 <strong id="countdown-value">-</strong>
               </div>
             </div>
+
+            <form id="profile-note-form" class="profile-note-form" novalidate>
+              <label class="profile-note-label" for="profile-note">
+                <span data-i18n="note.label">Заметка профиля</span>
+                <small id="profile-note-count">0/128</small>
+              </label>
+              <textarea
+                id="profile-note"
+                name="profileNote"
+                rows="3"
+                autocomplete="off"
+                spellcheck="true"
+                placeholder="Например: основной аккаунт, трейды, регион..."
+                data-i18n-attr="placeholder:note.placeholder;aria-label:note.label"
+              ></textarea>
+              <button id="profile-note-submit" class="secondary-button" type="submit" data-i18n="note.save">Сохранить заметку</button>
+              <p id="profile-note-status" class="form-status" hidden aria-live="polite"></p>
+            </form>
           </div>
 
           <div class="auth-note">

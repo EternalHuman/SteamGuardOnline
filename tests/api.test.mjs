@@ -100,6 +100,18 @@ test("API lifecycle: import, lookup, alias, delete", async () => {
   assert.equal(aliasData.kind, "alias");
   assert.equal(aliasData.recordId, importData.recordId);
 
+  const updatedPayload = payload("U");
+  const updatedPayloadResponse = await call(kv, "/api/update-payload", {
+    token: aliasToken,
+    payload: updatedPayload,
+  });
+  assert.equal(updatedPayloadResponse.status, 200);
+  assert.equal((await updatedPayloadResponse.json()).updated, true);
+
+  const updatedLookup = await call(kv, "/api/lookup", { token: primaryToken });
+  assert.equal(updatedLookup.status, 200);
+  assert.deepEqual((await updatedLookup.json()).payload, updatedPayload);
+
   const replaced = await call(kv, "/api/alias", {
     primaryToken,
     alias: { token: replacementAliasToken, wrap: wrap("G") },

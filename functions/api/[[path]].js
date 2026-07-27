@@ -374,6 +374,44 @@ async function handleLookup(context) {
   });
 }
 
+async function handleUpdatePayload(context) {
+  await enforceRateLimit(context.env, context.request, "update-payload", 12);
+  const body = await readJson(context.request);
+  const token = validateToken(body.token);
+  const payload = validatePayload(body.payload);
+  const entry = await getJson(context.env.SDA_KV, accessKey(token));
+
+  if (!entry || entry.v !== 1 || (entry.kind !== "primary" && entry.kind !== "alias")) {
+    throw new ApiError(404, "Хранилище не найдено. Проверьте секретный код.");
+  }
+
+  const record = await getJson(context.env.SDA_KV, recordKey(entry.recordId));
+  if (!record || record.v !== 1) {
+    throw new ApiError(404, "Хранилище не найдено.");
+  }
+
+  const now = new Date().toISOString();
+  const options = expirationOptions(context.env);
+  record.payload = payload;
+  record.updatedAt = now;
+
+  const writes = [putJson(context.env.SDA_KV, recordKey(entry.recordId), record, options)];
+  const primaryEntry = await getJson(context.env.SDA_KV, accessKey(record.primaryToken));
+  if (primaryEntry && primaryEntry.v === 1) {
+    writes.push(putJson(context.env.SDA_KV, accessKey(record.primaryToken), primaryEntry, options));
+  }
+  if (record.aliasToken) {
+    const aliasEntry = await getJson(context.env.SDA_KV, accessKey(record.aliasToken));
+    if (aliasEntry && aliasEntry.v === 1) {
+      writes.push(putJson(context.env.SDA_KV, accessKey(record.aliasToken), aliasEntry, options));
+    }
+  }
+
+  await Promise.all(writes);
+
+  return jsonResponse({ ok: true, updated: true, updatedAt: now });
+}
+
 async function requirePrimaryRecord(env, primaryToken) {
   const token = validateToken(primaryToken, "primaryToken");
   const entry = await getJson(env.SDA_KV, accessKey(token));
@@ -628,6 +666,8 @@ async function routeRequest(context) {
       return handleImport(context);
     case "lookup":
       return handleLookup(context);
+    case "update-payload":
+      return handleUpdatePayload(context);
     case "alias":
       return handleAlias(context);
     case "delete":
