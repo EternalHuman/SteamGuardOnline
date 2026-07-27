@@ -3826,7 +3826,7 @@ async function handleAccessSubmit(event) {
     dataKey = null;
     elements.accessCode.value = "";
     if (savedProfileId) closeAccountsMenuAfterHoverSelection();
-    setStatus(elements.accessStatus, t("access.openSuccess"), "success");
+    showNoteToast(t("access.openSuccess"));
   } catch (error) {
     if (dataKey instanceof Uint8Array) dataKey.fill(0);
     setStatus(elements.accessStatus, error.message || t("access.openError"), "error");
@@ -3917,7 +3917,8 @@ async function handleImportSubmit(event) {
     );
     const activeSavedProfileId =
       rememberedProfiles.find((profile) => profile.r && profile.r === activeResult.recordId)?.id || null;
-    setStatus(elements.savedProfileStatus, t("profiles.savedCount", { count: rememberedProfiles.length }), "success");
+    setStatus(elements.savedProfileStatus);
+    showNoteToast(t("profiles.savedCount", { count: rememberedProfiles.length }));
 
     for (const result of inactiveResults) {
       if (result.dataKey instanceof Uint8Array) result.dataKey.fill(0);
