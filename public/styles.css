@@ -2332,6 +2332,8 @@ body[data-page="api"] .site-info-panels {
   align-content: center;
   gap: 9px;
   min-width: 0;
+  padding-left: 30px;
+  border-left: 1px solid var(--line);
 }
 
 .profile-note-label {
@@ -2357,9 +2359,91 @@ body[data-page="api"] .site-info-panels {
   max-height: 170px;
 }
 
+.profile-note-form textarea.is-note-hidden {
+  color: transparent;
+  caret-color: var(--accent-bright);
+  text-shadow: 0 0 8px rgba(236, 242, 255, 0.38);
+}
+
+.profile-note-form textarea.is-note-hidden::placeholder {
+  color: #657183;
+  text-shadow: none;
+}
+
+@supports (-webkit-text-security: disc) {
+  .profile-note-form textarea.is-note-hidden {
+    -webkit-text-security: disc;
+    color: var(--text);
+    text-shadow: none;
+  }
+
+  .profile-note-form textarea.is-note-hidden::placeholder {
+    -webkit-text-security: none;
+  }
+}
+
+.profile-note-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
 .profile-note-form .secondary-button {
   justify-self: start;
-  min-height: 36px;
+  min-height: 42px;
+}
+
+.profile-note-save-button.is-dirty {
+  border-color: rgba(74, 222, 128, 0.62);
+  background: rgba(34, 197, 94, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(74, 222, 128, 0.16),
+    0 0 24px rgba(34, 197, 94, 0.22);
+  color: #c5f8d0;
+}
+
+.profile-note-save-button.is-dirty:hover:not(:disabled) {
+  border-color: rgba(134, 239, 172, 0.78);
+  background: rgba(34, 197, 94, 0.18);
+  color: white;
+}
+
+.profile-note-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.profile-note-form .note-action-button {
+  flex: 0 0 auto;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 12px;
+  font-size: 0;
+  line-height: 0;
+}
+
+.profile-note-form .note-action-button svg {
+  flex: 0 0 18.2px;
+  width: 18.2px;
+  height: 18.2px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.note-action-button[aria-pressed="true"]:not(:disabled) {
+  border-color: rgba(255, 138, 61, 0.28);
+  background: rgba(255, 138, 61, 0.1);
+  color: var(--accent-bright);
 }
 
 .profile-note-form .form-status {
@@ -2398,8 +2482,6 @@ body[data-page="api"] .site-info-panels {
   justify-items: center;
   gap: 10px;
   min-width: 128px;
-  padding-left: 30px;
-  border-left: 1px solid var(--line);
 }
 
 .countdown-ring {
@@ -3358,10 +3440,6 @@ body[data-page="api"] .site-info-panels {
     grid-template-columns: auto 1fr;
     justify-items: start;
     min-width: 0;
-    padding-top: 20px;
-    padding-left: 0;
-    border-top: 1px solid var(--line);
-    border-left: 0;
   }
 
   .countdown-ring {
@@ -3372,6 +3450,13 @@ body[data-page="api"] .site-info-panels {
   .countdown > div {
     align-self: center;
     justify-items: start;
+  }
+
+  .profile-note-form {
+    padding-top: 20px;
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    border-left: 0;
   }
 
   .benefits,

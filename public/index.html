@@ -643,7 +643,26 @@
                 placeholder="Например: основной аккаунт, трейды, регион..."
                 data-i18n-attr="placeholder:note.placeholder;aria-label:note.label"
               ></textarea>
-              <button id="profile-note-submit" class="secondary-button" type="submit" data-i18n="note.save">Сохранить заметку</button>
+              <div class="profile-note-toolbar">
+                <button id="profile-note-submit" class="secondary-button profile-note-save-button" type="submit" data-i18n="note.save">Сохранить</button>
+                <div class="profile-note-actions" aria-label="Действия с заметкой" data-i18n-attr="aria-label:note.actions">
+                  <button id="profile-note-visibility" class="secondary-button note-action-button" type="button" aria-pressed="false" aria-label="Показать" title="Показать" data-i18n-attr="aria-label:action.show;title:action.show">
+                    <svg class="visibility-icon" data-visibility-icon="show" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg class="visibility-icon" data-visibility-icon="hide" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                      <path d="M3 3l18 18" />
+                      <path d="M10.6 10.6A3 3 0 0 0 13.4 13.4" />
+                      <path d="M9.1 5.4A10.7 10.7 0 0 1 12 5c6 0 9.5 7 9.5 7a16.3 16.3 0 0 1-3 3.8" />
+                      <path d="M6.5 6.8C3.9 8.6 2.5 12 2.5 12s3.5 7 9.5 7a10.2 10.2 0 0 0 4.5-1" />
+                    </svg>
+                  </button>
+                  <button id="profile-note-copy" class="secondary-button note-action-button" type="button" aria-label="Копировать" title="Копировать" data-i18n-attr="aria-label:action.copy;title:action.copy" disabled>
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6V4h9v9h-2M4 7h9v9H4z" /></svg>
+                  </button>
+                </div>
+              </div>
               <p id="profile-note-status" class="form-status" hidden aria-live="polite"></p>
             </form>
           </div>

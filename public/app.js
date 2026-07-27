@@ -83,6 +83,8 @@ const elements = {
   profileNote: document.querySelector("#profile-note"),
   profileNoteCount: document.querySelector("#profile-note-count"),
   profileNoteSubmit: document.querySelector("#profile-note-submit"),
+  profileNoteVisibility: document.querySelector("#profile-note-visibility"),
+  profileNoteCopy: document.querySelector("#profile-note-copy"),
   profileNoteStatus: document.querySelector("#profile-note-status"),
   countdownValue: document.querySelector("#countdown-value"),
   countdownCircle: document.querySelector("#countdown-circle"),
@@ -123,6 +125,7 @@ const SAVED_PROFILE_INTRO_MAX_STAGGER_MS = 480;
 const SAVED_PROFILE_INTRO_ANIMATION_MS = 1000;
 const SAVED_PROFILE_INTRO_CLOSE_DELAY_MS = 2000;
 const PROFILE_NOTE_MAX_LENGTH = 128;
+const PROFILE_NOTE_HIDDEN_STORAGE_KEY = "sgo_profile_note_hidden_v1";
 const AUTH_PANEL_SCROLL_BOTTOM_OFFSET = 36;
 const AUTH_PANEL_SCROLL_TOP_FALLBACK_OFFSET = 18;
 const AUTH_PANEL_SCROLL_HIGHLIGHT_MS = 2000;
@@ -246,7 +249,7 @@ const TRANSLATIONS = {
     "profiles.rememberImportedHelp": "После импорта они появятся во вкладке получения кода.",
     "profiles.cookieHelp": "С PIN браузер хранит ссылку на профиль и соль, а access ID остаётся в KV в PIN-зашифрованном виде. Без PIN браузер хранит device secret. 5 неверных PIN-попыток удалят хранилище из KV.",
     "profiles.kind.primary": "Основной ID",
-    "profiles.kind.alias": "Пользовательский код",
+    "profiles.kind.alias": "Код",
     "profiles.pinProtected": "PIN",
     "profiles.noPin": "без PIN",
     "profiles.noPinShort": "без PIN",
@@ -275,6 +278,7 @@ const TRANSLATIONS = {
     "copy.primary": "Основной ID скопирован",
     "copy.alias": "Пользовательский код скопирован",
     "copy.guard": "Steam Guard-код скопирован",
+    "copy.note": "Заметка скопирована",
     "import.panelAria": "Импорт maFile",
     "import.noFile": "Файлы не выбраны",
     "import.dropTitle": "Перетащите maFile сюда",
@@ -322,9 +326,10 @@ const TRANSLATIONS = {
     "auth.seconds": "{count} сек",
     "auth.logoutSuccess": "Локальная сессия очищена.",
     "note.label": "Заметка профиля",
+    "note.actions": "Действия с заметкой",
     "note.placeholder": "Например: основной аккаунт, трейды, регион...",
     "note.counter": "{count}/{max}",
-    "note.save": "Сохранить заметку",
+    "note.save": "Сохранить",
     "note.saved": "Заметка сохранена в KV.",
     "note.saveError": "Не удалось сохранить заметку.",
     "note.tooLong": "Заметка должна быть не длиннее {max} символов.",
@@ -518,7 +523,7 @@ const TRANSLATIONS = {
     "profiles.rememberImportedHelp": "After import they will appear on the get-code tab.",
     "profiles.cookieHelp": "With PIN, the browser stores a profile reference and salt while the access ID stays PIN-encrypted in KV. Without PIN, the browser stores a device secret. 5 wrong PIN attempts delete the vault from KV.",
     "profiles.kind.primary": "Primary ID",
-    "profiles.kind.alias": "Custom code",
+    "profiles.kind.alias": "Code",
     "profiles.pinProtected": "PIN",
     "profiles.noPin": "no PIN",
     "profiles.noPinShort": "no PIN",
@@ -547,6 +552,7 @@ const TRANSLATIONS = {
     "copy.primary": "Primary ID copied",
     "copy.alias": "Custom code copied",
     "copy.guard": "Steam Guard code copied",
+    "copy.note": "Note copied",
     "import.panelAria": "Import maFile",
     "import.noFile": "No files selected",
     "import.dropTitle": "Drop maFile here",
@@ -593,9 +599,10 @@ const TRANSLATIONS = {
     "auth.seconds": "{count} sec",
     "auth.logoutSuccess": "Local session cleared.",
     "note.label": "Profile note",
+    "note.actions": "Note actions",
     "note.placeholder": "For example: main account, trades, region...",
     "note.counter": "{count}/{max}",
-    "note.save": "Save note",
+    "note.save": "Save",
     "note.saved": "Note saved to KV.",
     "note.saveError": "Could not save the note.",
     "note.tooLong": "Note must be no longer than {max} characters.",
@@ -785,7 +792,7 @@ const TRANSLATIONS = {
     "profiles.rememberImportedHelp": "导入后它们会显示在获取代码标签页。",
     "profiles.cookieHelp": "启用 PIN 时，浏览器保存配置引用和盐，access ID 以 PIN 加密形式保存在 KV。关闭 PIN 时，浏览器保存 device secret。5 次错误 PIN 尝试会从 KV 删除保险库。",
     "profiles.kind.primary": "主 ID",
-    "profiles.kind.alias": "自定义代码",
+    "profiles.kind.alias": "代码",
     "profiles.pinProtected": "PIN",
     "profiles.noPin": "无 PIN",
     "profiles.noPinShort": "无 PIN",
@@ -814,6 +821,7 @@ const TRANSLATIONS = {
     "copy.primary": "主 ID 已复制",
     "copy.alias": "自定义代码已复制",
     "copy.guard": "Steam Guard 代码已复制",
+    "copy.note": "备注已复制",
     "import.panelAria": "导入 maFile",
     "import.noFile": "未选择文件",
     "import.dropTitle": "将 maFile 拖到这里",
@@ -1034,7 +1042,7 @@ const TRANSLATIONS = {
     "profiles.rememberImportedHelp": "Después de importar aparecerán en la pestaña para obtener código.",
     "profiles.cookieHelp": "Con PIN, el navegador guarda una referencia del perfil y la sal, mientras el access ID queda cifrado con PIN en KV. Sin PIN, el navegador guarda un device secret. 5 PIN erróneos eliminan la bóveda de KV.",
     "profiles.kind.primary": "ID principal",
-    "profiles.kind.alias": "Código personalizado",
+    "profiles.kind.alias": "Código",
     "profiles.pinProtected": "PIN",
     "profiles.noPin": "sin PIN",
     "profiles.noPinShort": "sin PIN",
@@ -1063,6 +1071,7 @@ const TRANSLATIONS = {
     "copy.primary": "ID principal copiado",
     "copy.alias": "Código personalizado copiado",
     "copy.guard": "Código Steam Guard copiado",
+    "copy.note": "Nota copiada",
     "import.panelAria": "Importar maFile",
     "import.noFile": "Ningún archivo seleccionado",
     "import.dropTitle": "Suelta el maFile aquí",
@@ -1282,7 +1291,7 @@ const TRANSLATIONS = {
     "profiles.rememberImportedHelp": "Após a importação eles aparecerão na aba de obter código.",
     "profiles.cookieHelp": "Com PIN, o navegador guarda uma referência do perfil e o salt, enquanto o access ID fica criptografado com PIN no KV. Sem PIN, o navegador guarda um device secret. 5 PINs errados excluem o cofre do KV.",
     "profiles.kind.primary": "ID principal",
-    "profiles.kind.alias": "Código personalizado",
+    "profiles.kind.alias": "Código",
     "profiles.pinProtected": "PIN",
     "profiles.noPin": "sem PIN",
     "profiles.noPinShort": "sem PIN",
@@ -1311,6 +1320,7 @@ const TRANSLATIONS = {
     "copy.primary": "ID principal copiado",
     "copy.alias": "Código personalizado copiado",
     "copy.guard": "Código Steam Guard copiado",
+    "copy.note": "Nota copiada",
     "import.panelAria": "Importar maFile",
     "import.noFile": "Nenhum arquivo selecionado",
     "import.dropTitle": "Solte o maFile aqui",
@@ -1473,7 +1483,19 @@ const TRANSLATIONS = {
   },
 };
 
+function readProfileNoteHiddenPreference() {
+  try {
+    const value = localStorage.getItem(PROFILE_NOTE_HIDDEN_STORAGE_KEY);
+    if (value === "1") return true;
+    if (value === "0") return false;
+  } catch {
+    // Local UI preferences are optional.
+  }
+  return null;
+}
+
 let currentLanguage = DEFAULT_LANGUAGE;
+const initialProfileNoteHiddenPreference = readProfileNoteHiddenPreference();
 
 const state = {
   selectedFiles: [],
@@ -1500,6 +1522,8 @@ const state = {
   savedProfileIntroTimer: null,
   accountsMenuOpenMode: null,
   authPanelHighlightTimer: null,
+  profileNoteHidden: initialProfileNoteHiddenPreference ?? true,
+  hasProfileNoteHiddenPreference: initialProfileNoteHiddenPreference !== null,
   currentInfoPage: null,
   vaultModeAnimation: null,
   deployManifest: null,
@@ -2266,16 +2290,69 @@ function clampProfileNote(value) {
     : characters.join("");
 }
 
-function updateProfileNoteState() {
+function writeProfileNoteHiddenPreference(hidden) {
+  try {
+    localStorage.setItem(PROFILE_NOTE_HIDDEN_STORAGE_KEY, hidden ? "1" : "0");
+  } catch {
+    // Local UI preferences are optional.
+  }
+}
+
+function syncProfileNoteVisibility() {
+  if (!elements.profileNote || !elements.profileNoteVisibility) return;
+
+  const hasNoteText = profileNoteLength(normalizeProfileNote(elements.profileNote.value)) > 0;
+  const hidden = state.profileNoteHidden && hasNoteText;
+  elements.profileNote.classList.toggle("is-note-hidden", hidden);
+  elements.profileNote.dataset.hiddenText = hidden ? "true" : "false";
+
+  const labelKey = state.profileNoteHidden ? "action.show" : "action.hide";
+  elements.profileNoteVisibility.setAttribute("aria-pressed", String(!state.profileNoteHidden));
+  elements.profileNoteVisibility.setAttribute("aria-label", t(labelKey));
+  elements.profileNoteVisibility.setAttribute("title", t(labelKey));
+
+  const label = elements.profileNoteVisibility.querySelector("[data-button-label]");
+  if (label) label.textContent = t(labelKey);
+
+  const showIcon = elements.profileNoteVisibility.querySelector('[data-visibility-icon="show"]');
+  const hideIcon = elements.profileNoteVisibility.querySelector('[data-visibility-icon="hide"]');
+  if (showIcon) showIcon.hidden = !state.profileNoteHidden;
+  if (hideIcon) hideIcon.hidden = state.profileNoteHidden;
+}
+
+function setProfileNoteHidden(hidden, { persist = true } = {}) {
+  state.profileNoteHidden = Boolean(hidden);
+  state.hasProfileNoteHiddenPreference = true;
+  if (persist) writeProfileNoteHiddenPreference(state.profileNoteHidden);
+  syncProfileNoteVisibility();
+}
+
+function updateProfileNoteState({ autoHide = false } = {}) {
   if (!elements.profileNote || !elements.profileNoteCount) return;
   const clamped = clampProfileNote(elements.profileNote.value);
   if (clamped !== elements.profileNote.value) {
     elements.profileNote.value = clamped;
   }
+  const currentNote = normalizeProfileNote(elements.profileNote.value);
+  const hasNoteText = profileNoteLength(currentNote) > 0;
   elements.profileNoteCount.textContent = t("note.counter", {
     count: profileNoteLength(elements.profileNote.value),
     max: PROFILE_NOTE_MAX_LENGTH,
   });
+  if (autoHide && hasNoteText && !state.hasProfileNoteHiddenPreference) {
+    setProfileNoteHidden(true);
+  } else {
+    syncProfileNoteVisibility();
+  }
+  if (elements.profileNoteCopy) {
+    elements.profileNoteCopy.disabled = !currentNote;
+  }
+  if (elements.profileNoteSubmit) {
+    const savedNote = normalizeProfileNote(state.vaultPayload?.note || "");
+    const isDirty = Boolean(state.vaultPayload) && currentNote !== savedNote;
+    elements.profileNoteSubmit.classList.toggle("is-dirty", isDirty);
+    elements.profileNoteSubmit.dataset.dirty = isDirty ? "true" : "false";
+  }
 }
 
 function setProfileNoteValue(value) {
@@ -3767,6 +3844,20 @@ async function handleProfileNoteSubmit(event) {
   }
 }
 
+function handleProfileNoteVisibilityToggle() {
+  setProfileNoteHidden(!state.profileNoteHidden);
+  elements.profileNote?.focus();
+}
+
+function handleProfileNoteCopy() {
+  const validation = validateProfileNote(elements.profileNote?.value || "");
+  if (!validation.ok) {
+    setStatus(elements.profileNoteStatus, validation.message, "error");
+    return;
+  }
+  if (validation.value) copyText(validation.value, t("copy.note"));
+}
+
 async function handleAccessSubmit(event) {
   event.preventDefault();
   setStatus(elements.accessStatus);
@@ -4070,7 +4161,9 @@ elements.accessForm.addEventListener("submit", handleAccessSubmit);
 elements.importForm.addEventListener("submit", handleImportSubmit);
 elements.aliasForm.addEventListener("submit", handleAliasSubmit);
 elements.profileNoteForm.addEventListener("submit", handleProfileNoteSubmit);
-elements.profileNote.addEventListener("input", updateProfileNoteState);
+elements.profileNote.addEventListener("input", () => updateProfileNoteState({ autoHide: true }));
+elements.profileNoteVisibility.addEventListener("click", handleProfileNoteVisibilityToggle);
+elements.profileNoteCopy.addEventListener("click", handleProfileNoteCopy);
 elements.customAlias.addEventListener("input", updateAliasHint);
 elements.rememberImportedPin.addEventListener("input", updateRememberPinState);
 elements.accountsMenuButton?.addEventListener("click", (event) => {
