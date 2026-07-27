@@ -76,7 +76,15 @@ const elements = {
   importResult: document.querySelector("#import-result"),
   importResultList: document.querySelector("#import-result-list"),
   authPanel: document.querySelector("#auth-panel"),
+  accountTitleView: document.querySelector("#account-title-view"),
   accountLabel: document.querySelector("#account-label"),
+  accountLabelEdit: document.querySelector("#account-label-edit"),
+  accountLabelForm: document.querySelector("#account-label-form"),
+  accountLabelInput: document.querySelector("#account-label-input"),
+  accountLabelSave: document.querySelector("#account-label-save"),
+  accountLabelCancel: document.querySelector("#account-label-cancel"),
+  accountLabelCount: document.querySelector("#account-label-count"),
+  accountLabelStatus: document.querySelector("#account-label-status"),
   accessKindBadge: document.querySelector("#access-kind-badge"),
   guardCode: document.querySelector("#guard-code"),
   profileNoteForm: document.querySelector("#profile-note-form"),
@@ -124,6 +132,7 @@ const SAVED_PROFILE_INTRO_STAGGER_MS = 55;
 const SAVED_PROFILE_INTRO_MAX_STAGGER_MS = 480;
 const SAVED_PROFILE_INTRO_ANIMATION_MS = 1000;
 const SAVED_PROFILE_INTRO_CLOSE_DELAY_MS = 2000;
+const ACCOUNT_LABEL_MAX_LENGTH = 24;
 const PROFILE_NOTE_MAX_LENGTH = 128;
 const PROFILE_NOTE_HIDDEN_STORAGE_KEY = "sgo_profile_note_hidden_v1";
 const AUTH_PANEL_SCROLL_BOTTOM_OFFSET = 36;
@@ -325,6 +334,17 @@ const TRANSLATIONS = {
     "auth.logout": "Закрыть локальную сессию",
     "auth.seconds": "{count} сек",
     "auth.logoutSuccess": "Локальная сессия очищена.",
+    "auth.nicknameEdit": "Редактировать никнейм",
+    "auth.nicknameInput": "Никнейм аккаунта",
+    "auth.nicknamePlaceholder": "Никнейм до 24 символов",
+    "auth.nicknameSave": "Сохранить никнейм",
+    "auth.nicknameCancel": "Отменить",
+    "auth.nicknameCounter": "{count}/{max}",
+    "auth.nicknameRequired": "Введите никнейм аккаунта.",
+    "auth.nicknameTooLong": "Никнейм должен быть не длиннее {max} символов.",
+    "auth.nicknameRequiresVault": "Сначала откройте authenticator.",
+    "auth.nicknameSaved": "Никнейм сохранён.",
+    "auth.nicknameSaveError": "Не удалось сохранить никнейм.",
     "note.label": "Заметка профиля",
     "note.actions": "Действия с заметкой",
     "note.placeholder": "Например: основной аккаунт, трейды, регион...",
@@ -598,6 +618,17 @@ const TRANSLATIONS = {
     "auth.logout": "Close local session",
     "auth.seconds": "{count} sec",
     "auth.logoutSuccess": "Local session cleared.",
+    "auth.nicknameEdit": "Edit nickname",
+    "auth.nicknameInput": "Account nickname",
+    "auth.nicknamePlaceholder": "Nickname up to 24 characters",
+    "auth.nicknameSave": "Save nickname",
+    "auth.nicknameCancel": "Cancel",
+    "auth.nicknameCounter": "{count}/{max}",
+    "auth.nicknameRequired": "Enter an account nickname.",
+    "auth.nicknameTooLong": "Nickname must be no longer than {max} characters.",
+    "auth.nicknameRequiresVault": "Open an authenticator first.",
+    "auth.nicknameSaved": "Nickname saved.",
+    "auth.nicknameSaveError": "Could not save the nickname.",
     "note.label": "Profile note",
     "note.actions": "Note actions",
     "note.placeholder": "For example: main account, trades, region...",
@@ -1522,6 +1553,8 @@ const state = {
   savedProfileIntroTimer: null,
   accountsMenuOpenMode: null,
   authPanelHighlightTimer: null,
+  accountLabelEditing: false,
+  accountLabelSaving: false,
   profileNoteHidden: initialProfileNoteHiddenPreference ?? true,
   hasProfileNoteHiddenPreference: initialProfileNoteHiddenPreference !== null,
   currentInfoPage: null,
@@ -2162,6 +2195,7 @@ function applyTranslations() {
   renderSavedProfiles();
   updateRememberPinState();
   updateAliasHint();
+  updateAccountLabelEditorState();
   setAccessKindBadge(state.accessKind || "primary");
   syncVisibilityToggle(elements.accessCode, elements.accessVisibility);
   syncVisibilityToggle(elements.customAlias, elements.customAliasVisibility);
@@ -2262,6 +2296,100 @@ function deleteSavedProfileStorage() {
 
 function safeProfileLabel(value) {
   return String(value || "Steam Guard").replace(/\s+/g, " ").trim().slice(0, 80) || "Steam Guard";
+}
+
+function accountLabelLength(value) {
+  return [...String(value ?? "")].length;
+}
+
+function normalizeAccountLabel(value) {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function clampAccountLabel(value) {
+  const normalized = String(value ?? "").replace(/\r\n?/g, " ").replace(/\s+/g, " ");
+  const characters = [...normalized];
+  return characters.length > ACCOUNT_LABEL_MAX_LENGTH
+    ? characters.slice(0, ACCOUNT_LABEL_MAX_LENGTH).join("")
+    : normalized;
+}
+
+function accountDisplayLabel(payload = state.vaultPayload) {
+  return normalizeAccountLabel(payload?.label) || "Steam Guard";
+}
+
+function validateAccountLabel(value) {
+  const label = normalizeAccountLabel(value);
+  if (!label) {
+    return { ok: false, message: t("auth.nicknameRequired") };
+  }
+  if (accountLabelLength(label) > ACCOUNT_LABEL_MAX_LENGTH) {
+    return {
+      ok: false,
+      message: t("auth.nicknameTooLong", { max: ACCOUNT_LABEL_MAX_LENGTH }),
+    };
+  }
+  return { ok: true, value: label };
+}
+
+function syncAccountLabelDisplay(label = accountDisplayLabel()) {
+  if (!elements.accountLabel) return;
+  elements.accountLabel.textContent = label;
+  elements.accountLabel.title = label;
+}
+
+function updateAccountLabelEditorState() {
+  if (!elements.accountLabelInput || !elements.accountLabelCount) return;
+
+  const clamped = clampAccountLabel(elements.accountLabelInput.value);
+  if (clamped !== elements.accountLabelInput.value) {
+    elements.accountLabelInput.value = clamped;
+  }
+
+  const validation = validateAccountLabel(elements.accountLabelInput.value);
+  const count = accountLabelLength(elements.accountLabelInput.value);
+  elements.accountLabelCount.textContent = t("auth.nicknameCounter", {
+    count,
+    max: ACCOUNT_LABEL_MAX_LENGTH,
+  });
+  elements.accountLabelCount.dataset.kind = validation.ok ? "neutral" : "error";
+
+  if (elements.accountLabelSave) {
+    const savedLabel = accountDisplayLabel();
+    const unchanged = validation.ok && validation.value === savedLabel;
+    elements.accountLabelSave.disabled = state.accountLabelSaving || !validation.ok || unchanged;
+  }
+}
+
+function setAccountLabelEditing(editing, { focus = false } = {}) {
+  state.accountLabelEditing = Boolean(editing);
+  if (elements.accountTitleView) elements.accountTitleView.hidden = state.accountLabelEditing;
+  if (elements.accountLabelForm) elements.accountLabelForm.hidden = !state.accountLabelEditing;
+  setStatus(elements.accountLabelStatus);
+
+  if (state.accountLabelEditing) {
+    elements.accountLabelInput.value = accountDisplayLabel();
+    updateAccountLabelEditorState();
+    if (focus) {
+      elements.accountLabelInput.focus();
+      elements.accountLabelInput.select();
+    }
+  } else {
+    syncAccountLabelDisplay();
+  }
+}
+
+function setAccountLabelSaveBusy(busy) {
+  state.accountLabelSaving = Boolean(busy);
+  if (!elements.accountLabelSave) return;
+  elements.accountLabelSave.classList.toggle("is-saving", state.accountLabelSaving);
+  if (state.accountLabelSaving) {
+    elements.accountLabelSave.disabled = true;
+    elements.accountLabelSave.setAttribute("aria-busy", "true");
+  } else {
+    elements.accountLabelSave.removeAttribute("aria-busy");
+    updateAccountLabelEditorState();
+  }
 }
 
 function profileNoteLength(value) {
@@ -3362,6 +3490,22 @@ function setBusy(button, busy, busyKey = "busy.processing") {
   }
 }
 
+function setProfileNoteSaveBusy(busy) {
+  const button = elements.profileNoteSubmit;
+  if (!button) return;
+  button.classList.toggle("is-saving", busy);
+  button.disabled = busy;
+  if (busy) {
+    button.setAttribute("aria-busy", "true");
+    button.setAttribute("aria-label", t("busy.encrypting"));
+    button.setAttribute("title", t("busy.encrypting"));
+  } else {
+    button.removeAttribute("aria-busy");
+    button.removeAttribute("aria-label");
+    button.removeAttribute("title");
+  }
+}
+
 function showToast(message) {
   elements.toast.textContent = message;
   elements.toast.hidden = false;
@@ -3501,7 +3645,7 @@ function parseMaFile(text, keepLabel) {
   if (keepLabel) {
     const rawLabel = parsed.account_name ?? parsed.accountName ?? parsed.AccountName ?? parsed.maFile?.account_name;
     if (rawLabel !== undefined && rawLabel !== null) {
-      label = String(rawLabel).trim().slice(0, 80) || null;
+      label = clampAccountLabel(rawLabel).trim() || null;
     }
   }
 
@@ -3665,11 +3809,14 @@ function validateDecryptedVault(payload) {
   if (!noteValidation.ok) {
     throw new Error(noteValidation.message);
   }
+  const label = clampAccountLabel(payload.label).trim();
 
   const normalized = {
     ...payload,
+    label,
     note: noteValidation.value,
   };
+  if (!normalized.label) delete normalized.label;
   if (!normalized.note) delete normalized.note;
   return normalized;
 }
@@ -3691,6 +3838,10 @@ function clearActiveVault({ hide = true } = {}) {
   state.accessKind = null;
   state.hasAlias = false;
 
+  setAccountLabelSaveBusy(false);
+  setAccountLabelEditing(false);
+  syncAccountLabelDisplay("Steam Guard");
+  setStatus(elements.accountLabelStatus);
   elements.guardCode.textContent = "•••••";
   setProfileNoteValue("");
   setStatus(elements.profileNoteStatus);
@@ -3789,7 +3940,7 @@ function activateVault({
   updateSavedProfileActiveState();
   state.hasAlias = Boolean(hasAlias);
 
-  elements.accountLabel.textContent = payload.label || "Steam Guard";
+  syncAccountLabelDisplay();
   setProfileNoteValue(state.vaultPayload.note || "");
   setAccessKindBadge(kind);
   elements.managePrimary.hidden = kind !== "primary";
@@ -3802,6 +3953,54 @@ function activateVault({
   updateGuardCode();
   state.timerId = setInterval(updateGuardCode, 250);
   if (scroll) scrollAuthPanelIntoView();
+}
+
+async function handleAccountLabelSubmit(event) {
+  event.preventDefault();
+  setStatus(elements.accountLabelStatus);
+
+  if (!state.vaultPayload || !(state.dataKey instanceof Uint8Array) || !validateAccessToken(state.activeAccessToken)) {
+    setStatus(elements.accountLabelStatus, t("auth.nicknameRequiresVault"), "error");
+    return;
+  }
+
+  const validation = validateAccountLabel(elements.accountLabelInput.value);
+  if (!validation.ok) {
+    setStatus(elements.accountLabelStatus, validation.message, "error");
+    elements.accountLabelInput.focus();
+    return;
+  }
+
+  if (validation.value === accountDisplayLabel()) {
+    setAccountLabelEditing(false);
+    return;
+  }
+
+  const nextPayload = {
+    ...state.vaultPayload,
+    label: validation.value,
+  };
+
+  setAccountLabelSaveBusy(true);
+  try {
+    const encryptedPayload = await encryptPayloadWithDataKey(nextPayload, state.dataKey);
+    await apiPost("/api/update-payload", {
+      token: state.activeAccessToken,
+      payload: encryptedPayload,
+    });
+
+    state.vaultPayload = validateDecryptedVault(nextPayload);
+    syncAccountLabelDisplay();
+    if (state.activeSavedProfileId) {
+      updateSavedProfileMetadata(state.activeSavedProfileId, { label: validation.value });
+    }
+    setAccountLabelEditing(false);
+    showNoteToast(t("auth.nicknameSaved"));
+  } catch (error) {
+    setStatus(elements.accountLabelStatus, error.message || t("auth.nicknameSaveError"), "error");
+  } finally {
+    setAccountLabelSaveBusy(false);
+  }
 }
 
 async function handleProfileNoteSubmit(event) {
@@ -3827,7 +4026,7 @@ async function handleProfileNoteSubmit(event) {
     delete nextPayload.note;
   }
 
-  setBusy(elements.profileNoteSubmit, true, "busy.encrypting");
+  setProfileNoteSaveBusy(true);
   try {
     const encryptedPayload = await encryptPayloadWithDataKey(nextPayload, state.dataKey);
     await apiPost("/api/update-payload", {
@@ -3840,7 +4039,7 @@ async function handleProfileNoteSubmit(event) {
   } catch (error) {
     setStatus(elements.profileNoteStatus, error.message || t("note.saveError"), "error");
   } finally {
-    setBusy(elements.profileNoteSubmit, false);
+    setProfileNoteSaveBusy(false);
   }
 }
 
@@ -3881,7 +4080,7 @@ async function handleAccessSubmit(event) {
     prepared = await prepareAccessCode(accessCode);
     const response = await apiPost("/api/lookup", { token: prepared.token });
     dataKey = await unwrapDataKeyWithPreparedAccess(response.wrap, prepared);
-    const payload = await decryptEncryptedPayload(response.payload, dataKey);
+    const payload = validateDecryptedVault(await decryptEncryptedPayload(response.payload, dataKey));
 
     if (savedProfileId) {
       updateSavedProfileMetadata(savedProfileId, {
@@ -4160,6 +4359,16 @@ for (const link of elements.siteTabButtons) {
 elements.accessForm.addEventListener("submit", handleAccessSubmit);
 elements.importForm.addEventListener("submit", handleImportSubmit);
 elements.aliasForm.addEventListener("submit", handleAliasSubmit);
+elements.accountLabelForm.addEventListener("submit", handleAccountLabelSubmit);
+elements.accountLabelEdit.addEventListener("click", () => setAccountLabelEditing(true, { focus: true }));
+elements.accountLabelCancel.addEventListener("click", () => setAccountLabelEditing(false));
+elements.accountLabelInput.addEventListener("input", updateAccountLabelEditorState);
+elements.accountLabelInput.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  event.preventDefault();
+  setAccountLabelEditing(false);
+  elements.accountLabelEdit.focus();
+});
 elements.profileNoteForm.addEventListener("submit", handleProfileNoteSubmit);
 elements.profileNote.addEventListener("input", () => updateProfileNoteState({ autoHide: true }));
 elements.profileNoteVisibility.addEventListener("click", handleProfileNoteVisibilityToggle);

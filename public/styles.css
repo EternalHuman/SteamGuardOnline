@@ -869,6 +869,13 @@ code {
   gap: 20px;
 }
 
+.account-heading {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 7px;
+  min-width: 0;
+}
+
 .card-kicker {
   display: block;
   margin-bottom: 5px;
@@ -886,10 +893,93 @@ code {
   letter-spacing: -0.025em;
 }
 
+.account-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 #account-label {
+  min-width: 0;
   font-size: clamp(27px, 3.4vw, 38px);
   line-height: 1.08;
   overflow-wrap: anywhere;
+}
+
+.account-label-edit-button,
+.account-label-action-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--muted-strong);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.account-label-edit-button {
+  transform: translateY(2px);
+}
+
+.account-label-edit-button:hover,
+.account-label-action-button:hover:not(:disabled) {
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.account-label-edit-button svg,
+.account-label-action-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.account-label-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 430px);
+}
+
+.account-label-form input {
+  min-height: 38px;
+  padding-inline: 12px;
+  font-size: 13px;
+}
+
+.account-label-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.account-label-count {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.account-label-count[data-kind="error"] {
+  color: var(--red);
+}
+
+.account-label-status {
+  width: min(100%, 430px);
+  margin: 0;
 }
 
 .zero-knowledge-badge,
@@ -2294,8 +2384,9 @@ body[data-page="api"] .site-info-panels {
 
 .code-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(210px, 0.62fr);
-  gap: 26px;
+  grid-template-columns: minmax(0, 1fr) minmax(112px, auto) minmax(238px, 0.52fr);
+  column-gap: 16px;
+  row-gap: 22px;
   align-items: center;
   margin-top: 38px;
   padding: 30px;
@@ -2304,6 +2395,11 @@ body[data-page="api"] .site-info-panels {
   background:
     radial-gradient(circle at 15% 50%, rgba(255, 138, 61, 0.09), transparent 45%),
     rgba(5, 9, 14, 0.42);
+}
+
+.code-display,
+.profile-note-form {
+  min-width: 0;
 }
 
 .code-display > span {
@@ -2331,8 +2427,7 @@ body[data-page="api"] .site-info-panels {
   display: grid;
   align-content: center;
   gap: 9px;
-  min-width: 0;
-  padding-left: 30px;
+  padding-left: 33px;
   border-left: 1px solid var(--line);
 }
 
@@ -2383,16 +2478,84 @@ body[data-page="api"] .site-info-panels {
 }
 
 .profile-note-toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  flex-wrap: nowrap;
+  column-gap: 8px;
+  min-width: 0;
 }
 
 .profile-note-form .secondary-button {
   justify-self: start;
   min-height: 42px;
+}
+
+.profile-note-save-button {
+  position: relative;
+  min-width: 104px;
+  width: max-content;
+  max-width: 100%;
+  overflow: hidden;
+  padding-inline: 12px;
+  white-space: nowrap;
+}
+
+.profile-note-save-button [data-button-label] {
+  transition: opacity 140ms ease;
+}
+
+.profile-note-save-button .save-lock-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  opacity: 0;
+  pointer-events: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transform: translate(-50%, -50%);
+  transition: opacity 140ms ease;
+}
+
+.profile-note-save-button.is-saving:disabled {
+  opacity: 0.86;
+}
+
+.profile-note-save-button.is-saving [data-button-label] {
+  opacity: 0;
+}
+
+.profile-note-save-button.is-saving .save-lock-icon {
+  animation: save-lock-shake 620ms ease-in-out infinite;
+  opacity: 1;
+}
+
+@keyframes save-lock-shake {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  20% {
+    transform: translate(calc(-50% - 2px), -50%) rotate(-8deg);
+  }
+
+  40% {
+    transform: translate(calc(-50% + 2px), -50%) rotate(8deg);
+  }
+
+  60% {
+    transform: translate(calc(-50% - 1px), -50%) rotate(-5deg);
+  }
+
+  80% {
+    transform: translate(calc(-50% + 1px), -50%) rotate(5deg);
+  }
 }
 
 .profile-note-save-button.is-dirty {
@@ -2414,7 +2577,7 @@ body[data-page="api"] .site-info-panels {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-left: auto;
+  min-width: 0;
   flex: 0 0 auto;
 }
 
@@ -2481,7 +2644,7 @@ body[data-page="api"] .site-info-panels {
   display: grid;
   justify-items: center;
   gap: 10px;
-  min-width: 128px;
+  min-width: 112px;
 }
 
 .countdown-ring {

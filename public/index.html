@@ -601,9 +601,60 @@
       <section id="auth-panel" class="auth-section section-shell" hidden aria-live="polite">
         <div class="auth-card">
           <div class="auth-meta">
-            <div>
+            <div class="account-heading">
               <span class="card-kicker" data-i18n="auth.kicker">Текущий authenticator</span>
-              <h2 id="account-label">Steam Guard</h2>
+              <div id="account-title-view" class="account-title-row">
+                <h2 id="account-label">Steam Guard</h2>
+                <button
+                  id="account-label-edit"
+                  class="account-label-edit-button"
+                  type="button"
+                  aria-label="Редактировать никнейм"
+                  title="Редактировать никнейм"
+                  data-i18n-attr="aria-label:auth.nicknameEdit;title:auth.nicknameEdit"
+                >
+                  <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="M4 14.5V16h1.5L15 6.5 13.5 5 4 14.5Z" />
+                    <path d="m12.6 5.9 1.5 1.5" />
+                  </svg>
+                </button>
+              </div>
+              <form id="account-label-form" class="account-label-form" novalidate hidden>
+                <input
+                  id="account-label-input"
+                  type="text"
+                  maxlength="24"
+                  autocomplete="off"
+                  spellcheck="false"
+                  aria-label="Никнейм аккаунта"
+                  placeholder="Steam Guard"
+                  data-i18n-attr="aria-label:auth.nicknameInput;placeholder:auth.nicknamePlaceholder"
+                />
+                <div class="account-label-actions">
+                  <button
+                    id="account-label-save"
+                    class="account-label-action-button"
+                    type="submit"
+                    aria-label="Сохранить никнейм"
+                    title="Сохранить никнейм"
+                    data-i18n-attr="aria-label:auth.nicknameSave;title:auth.nicknameSave"
+                  >
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10.6 4 4L16 6" /></svg>
+                  </button>
+                  <button
+                    id="account-label-cancel"
+                    class="account-label-action-button"
+                    type="button"
+                    aria-label="Отменить"
+                    title="Отменить"
+                    data-i18n-attr="aria-label:auth.nicknameCancel;title:auth.nicknameCancel"
+                  >
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg>
+                  </button>
+                </div>
+                <small id="account-label-count" class="account-label-count">0/24</small>
+              </form>
+              <p id="account-label-status" class="form-status account-label-status" hidden aria-live="polite"></p>
             </div>
             <span id="access-kind-badge" class="access-kind" data-i18n="accessKind.primary">Основной ID</span>
           </div>
@@ -644,7 +695,14 @@
                 data-i18n-attr="placeholder:note.placeholder;aria-label:note.label"
               ></textarea>
               <div class="profile-note-toolbar">
-                <button id="profile-note-submit" class="secondary-button profile-note-save-button" type="submit" data-i18n="note.save">Сохранить</button>
+                <button id="profile-note-submit" class="secondary-button profile-note-save-button" type="submit">
+                  <span data-button-label data-i18n="note.save">Сохранить</span>
+                  <svg class="save-lock-icon" viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="M6.5 8V6.5a3.5 3.5 0 0 1 7 0V8" />
+                    <rect x="4.5" y="8" width="11" height="8" rx="2" />
+                    <path d="M10 11.2v2.1" />
+                  </svg>
+                </button>
                 <div class="profile-note-actions" aria-label="Действия с заметкой" data-i18n-attr="aria-label:note.actions">
                   <button id="profile-note-visibility" class="secondary-button note-action-button" type="button" aria-pressed="false" aria-label="Показать" title="Показать" data-i18n-attr="aria-label:action.show;title:action.show">
                     <svg class="visibility-icon" data-visibility-icon="show" viewBox="0 0 24 24" aria-hidden="true">
