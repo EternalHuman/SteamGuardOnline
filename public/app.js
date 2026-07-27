@@ -106,6 +106,7 @@ const DEFAULT_LANGUAGE = "en";
 const LANGUAGE_STORAGE_KEY = "sda-vault-language";
 const PROFILE_STORAGE_KEY = "sgo_saved_profiles_v1";
 const PROFILE_COOKIE_NAME = "sgo_saved_profiles_v1";
+const LAST_PROFILE_COOKIE_NAME = "sgo_last_profile_v1";
 const PROFILE_COOKIE_CHUNK_PREFIX = `${PROFILE_COOKIE_NAME}_chunk_`;
 const PROFILE_COOKIE_CHUNK_COUNT_NAME = `${PROFILE_COOKIE_NAME}_chunk_count`;
 const PROFILE_COOKIE_EXPIRES = "Fri, 31 Dec 9999 23:59:59 GMT";
@@ -2194,6 +2195,21 @@ function expireCookie(name) {
   document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax${cookieSecureAttribute()}`;
 }
 
+function readLastSelectedProfileId() {
+  const profileId = readCookie(LAST_PROFILE_COOKIE_NAME);
+  return validateSavedProfileId(profileId) ? profileId : "";
+}
+
+function saveLastSelectedProfileId(profileId) {
+  if (!validateSavedProfileId(profileId)) return;
+  document.cookie = `${LAST_PROFILE_COOKIE_NAME}=${profileId}; ${profileCookieAttributes()}`;
+}
+
+function clearLastSelectedProfileId(profileId = "") {
+  if (profileId && readLastSelectedProfileId() !== profileId) return;
+  expireCookie(LAST_PROFILE_COOKIE_NAME);
+}
+
 function deleteProfileCookie() {
   expireCookie(PROFILE_COOKIE_NAME);
   expireCookie(PROFILE_COOKIE_CHUNK_COUNT_NAME);
@@ -2208,6 +2224,7 @@ function deleteSavedProfileStorage() {
   } catch {
     // Storage cleanup is best-effort.
   }
+  clearLastSelectedProfileId();
   deleteProfileCookie();
 }
 
@@ -2656,6 +2673,7 @@ function updateSavedProfileMetadata(id, { recordId, label, kind, mask } = {}) {
 
 function removeSavedProfile(id) {
   state.savedProfiles = writeSavedProfilesToStorage(state.savedProfiles.filter((profile) => profile.id !== id));
+  clearLastSelectedProfileId(id);
   renderSavedProfiles();
 }
 
@@ -2663,6 +2681,38 @@ function clearSavedProfiles() {
   state.savedProfiles = [];
   deleteSavedProfileStorage();
   renderSavedProfiles();
+}
+
+function findLastSelectedSavedProfileIndex() {
+  const profileId = readLastSelectedProfileId();
+  if (!profileId) return -1;
+
+  const index = state.savedProfiles.findIndex((profile) => profile.id === profileId);
+  if (index === -1) clearLastSelectedProfileId(profileId);
+  return index;
+}
+
+function restoreLastSelectedSavedProfile() {
+  if (state.currentInfoPage || getAccessCodeFromUrl() || state.savedProfiles.length === 0) return false;
+
+  const index = findLastSelectedSavedProfileIndex();
+  if (index === -1) return false;
+
+  const profile = state.savedProfiles[index];
+  if (!profile) return false;
+
+  setVaultMode("access");
+  updateRememberPinState();
+
+  if (profile.p !== 0) {
+    setAccountsMenuOpen(true, "click");
+    showSavedProfilePinPanel(index);
+    return true;
+  }
+
+  hideSavedProfilePinPanel();
+  openSavedProfile(index, "");
+  return true;
 }
 
 function maskAccessCode(profile) {
@@ -2699,6 +2749,8 @@ function updateSavedProfilePinPanel({ focus = false, clearValue = false } = {}) 
 }
 
 function showSavedProfilePinPanel(index, { clearStatus = true } = {}) {
+  const profile = state.savedProfiles[index];
+  if (profile) saveLastSelectedProfileId(profile.id);
   state.pendingSavedProfilePinIndex = index;
   if (clearStatus) setStatus(elements.savedProfileStatus);
   updateSavedProfilePinPanel({ focus: true, clearValue: true });
@@ -2841,6 +2893,7 @@ function handleSavedProfilePinFailure(index, error) {
   if (error instanceof ApiRequestError && error.status === 403) {
     if (error.data?.deleted) {
       state.savedProfiles = writeSavedProfilesToStorage(state.savedProfiles.filter((item) => item.id !== profile.id));
+      clearLastSelectedProfileId(profile.id);
       renderSavedProfiles();
       hideSavedProfilePinPanel();
       setStatus(elements.savedProfileStatus, t("profiles.deletedAfterAttempts"), "error");
@@ -2867,6 +2920,7 @@ function handleSavedProfilePinFailure(index, error) {
 
   if (error instanceof ApiRequestError && error.status === 404) {
     state.savedProfiles = writeSavedProfilesToStorage(state.savedProfiles.filter((item) => item.id !== profile.id));
+    clearLastSelectedProfileId(profile.id);
     renderSavedProfiles();
     hideSavedProfilePinPanel();
   }
@@ -2957,7 +3011,7 @@ function removeAccessCodeFromUrl() {
 
 function submitAccessCodeFromUrl() {
   const accessCode = getAccessCodeFromUrl();
-  if (!accessCode) return;
+  if (!accessCode) return false;
 
   removeAccessCodeFromUrl();
   setVaultMode("access");
@@ -2970,6 +3024,7 @@ function submitAccessCodeFromUrl() {
   } else {
     elements.accessForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   }
+  return true;
 }
 
 function prefersReducedMotion() {
@@ -3647,6 +3702,7 @@ function activateVault({
   state.activeAccessCode = accessCode;
   state.activeAccessToken = accessToken;
   state.activeSavedProfileId = savedProfileId;
+  if (savedProfileId) saveLastSelectedProfileId(savedProfileId);
   updateSavedProfileActiveState();
   state.hasAlias = Boolean(hasAlias);
 
@@ -4060,6 +4116,7 @@ elements.savedProfileList.addEventListener("click", (event) => {
   if (button.dataset.profileAction === "open") {
     const profile = state.savedProfiles[index];
     if (!profile) return;
+    saveLastSelectedProfileId(profile.id);
     if (profile.p !== 0) {
       showSavedProfilePinPanel(index);
       return;
@@ -4222,7 +4279,8 @@ applyTranslations();
 checkService();
 loadRuntimeConfig();
 loadDeployVerification();
-if (!state.currentInfoPage) submitAccessCodeFromUrl();
+const accessCodeSubmittedFromUrl = !state.currentInfoPage && submitAccessCodeFromUrl();
+if (!accessCodeSubmittedFromUrl) restoreLastSelectedSavedProfile();
 
 // Prevent accidental form submission when a copied primary ID is selected.
 document.addEventListener("keydown", (event) => {
