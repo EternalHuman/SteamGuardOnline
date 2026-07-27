@@ -330,11 +330,11 @@
               </div>
               <div class="api-info-card">
                 <strong>Секреты</strong>
-                <p>API не принимает Steam-логин, пароль или полный maFile. В KV уходят только зашифрованный payload, lookup token и обёрнутые ключи.</p>
+                <p>Обычные endpoints не принимают Steam-логин, пароль или полный maFile. В KV уходят только зашифрованный payload, lookup token и обёрнутые ключи. Исключение - <code>/api/unsafe-code</code>: он принимает raw access ID или alias в body и расшифровывает vault на стороне API.</p>
               </div>
               <div class="api-info-card">
                 <strong>Лимиты</strong>
-                <p>JSON body - до <code>24 KB</code>. Rate limits считаются по IP за минуту: <code>/api/import</code> и <code>/api/save-saved</code> - 50, <code>/api/lookup</code> - 20, <code>/api/update-payload</code> - 12, <code>/api/open-saved</code> - 10, <code>/api/alias</code> - 8, <code>/api/delete</code> и <code>/api/delete-saved</code> - 5. При превышении API вернёт <code>429</code> и <code>Retry-After: 60</code>. В интерфейсе за одну загрузку можно выбрать до <code>50</code> maFile.</p>
+                <p>JSON body - до <code>24 KB</code>. Rate limits считаются по IP за минуту: <code>/api/import</code> и <code>/api/save-saved</code> - 50, <code>/api/lookup</code> - 20, <code>/api/update-payload</code> - 12, <code>/api/open-saved</code> и <code>/api/unsafe-code</code> - 10, <code>/api/alias</code> - 8, <code>/api/delete</code> и <code>/api/delete-saved</code> - 5. При превышении API вернёт <code>429</code> и <code>Retry-After: 60</code>. В интерфейсе за одну загрузку можно выбрать до <code>50</code> maFile.</p>
               </div>
             </div>
 
@@ -410,6 +410,29 @@
   headers: { "content-type": "application/json" },
   credentials: "omit",
   body: JSON.stringify({ token: lookupToken })
+});</code></pre>
+              </article>
+
+              <article class="api-detail-card">
+                <div>
+                  <code>POST /api/unsafe-code</code>
+                  <p><strong>UNSAFE.</strong> Возвращает текущий Steam Guard-код через серверную расшифровку vault. В body отправляется raw основной ID или alias; API сам derives lookup token, unwrap data key, decrypts payload и получает plaintext <code>shared_secret</code> на стороне Cloudflare Function.</p>
+                  <div class="api-doc-block">
+                    <strong>Тело запроса</strong>
+                    <p><code>accessCode</code> <span class="api-type">string</span> - основной ID или пользовательский alias в открытом виде. Не используйте этот endpoint, если нужно сохранить zero-knowledge модель.</p>
+                  </div>
+                  <div class="api-doc-block">
+                    <strong>Ответ и ошибки</strong>
+                    <p><code>200</code> возвращает <code>code</code>, <code>secondsRemaining</code>, <code>validUntil</code>, <code>kind</code>, <code>recordId</code> и <code>unsafe: true</code>. <code>404</code> означает неизвестный access code; <code>403</code> - не удалось расшифровать vault; <code>429</code> - превышен лимит unsafe-запросов.</p>
+                  </div>
+                </div>
+                <pre><code>const response = await fetch("/api/unsafe-code", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  credentials: "omit",
+  body: JSON.stringify({
+    accessCode: "primary-id-or-alias"
+  })
 });</code></pre>
               </article>
 

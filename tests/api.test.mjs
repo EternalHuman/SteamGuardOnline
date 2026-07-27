@@ -11,8 +11,17 @@ if (!globalThis.btoa) {
     configurable: true,
   });
 }
+if (!globalThis.atob) {
+  Object.defineProperty(globalThis, "atob", {
+    value: (value) => Buffer.from(value, "base64").toString("binary"),
+    configurable: true,
+  });
+}
 
 const { onRequest } = await import("../functions/api/[[path]].js");
+const { createAccessEnvelope, createEncryptedPayload } = await import("../public/crypto.js");
+
+const TEST_SECRET = "SGVsbG9Xb3JsZDEyMzQ1Njc4OTA=";
 
 class FakeKV {
   constructor() {
@@ -129,6 +138,47 @@ test("API lifecycle: import, lookup, alias, delete", async () => {
 
   const deletedLookup = await call(kv, "/api/lookup", { token: primaryToken });
   assert.equal(deletedLookup.status, 404);
+});
+
+test("unsafe code endpoint decrypts a vault server-side and returns a Steam Guard code", async () => {
+  const kv = new FakeKV();
+  const accessCode = "unsafe_api_access123";
+  const originalNow = Date.now;
+  let encrypted;
+  Date.now = () => 1_700_000_000_000;
+
+  try {
+    encrypted = await createEncryptedPayload({
+      v: 1,
+      sharedSecret: TEST_SECRET,
+      label: "api-account",
+    });
+    const primary = await createAccessEnvelope(accessCode, encrypted.dataKey);
+
+    const imported = await call(kv, "/api/import", {
+      payload: encrypted.payload,
+      primary,
+    });
+    assert.equal(imported.status, 201);
+
+    const response = await call(kv, "/api/unsafe-code", { accessCode });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      ok: true,
+      unsafe: true,
+      code: "8T2JP",
+      secondsRemaining: 10,
+      remainingFraction: 1 / 3,
+      step: 56666666,
+      validUntil: "2023-11-14T22:13:30.000Z",
+      kind: "primary",
+      recordId: (await imported.json()).recordId,
+      label: "api-account",
+    });
+  } finally {
+    Date.now = originalNow;
+    if (encrypted?.dataKey instanceof Uint8Array) encrypted.dataKey.fill(0);
+  }
 });
 
 test("API rejects cross-origin browser requests", async () => {

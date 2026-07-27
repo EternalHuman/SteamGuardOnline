@@ -24,6 +24,19 @@ const SAVED_PROFILE_MAX_PIN_ATTEMPTS = 5;
 const DEFAULT_FIXED_DEPLOY_URL = "https://4391187a.steamguardonline.pages.dev";
 const FIXED_DEPLOY_HOST_PATTERN = /^(?=.*\d)[a-z0-9]{7,}\.steamguardonline\.pages\.dev$/i;
 const GITHUB_COMMIT_PATTERN = /^[a-f0-9]{40}$/i;
+const TEXT_ENCODER = new TextEncoder();
+const TEXT_DECODER = new TextDecoder("utf-8", { fatal: true });
+const PRIMARY_CODE_LENGTH = 16;
+const PRIMARY_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const ALIAS_MIN_LENGTH = 3;
+const ALIAS_MAX_LENGTH = 64;
+const ROOT_KDF_ITERATIONS = 310_000;
+const ROOT_KDF_SALT = TEXT_ENCODER.encode("SDA Cloudflare Pages access root v1");
+const LOOKUP_CONTEXT = TEXT_ENCODER.encode("SDA Cloudflare Pages lookup token v1");
+const WRAP_INFO = TEXT_ENCODER.encode("SDA Cloudflare Pages data-key wrap v1");
+const WRAP_AAD = TEXT_ENCODER.encode("SDA Cloudflare Pages wrapped data key v1");
+const PAYLOAD_AAD = TEXT_ENCODER.encode("SDA Cloudflare Pages encrypted payload v1");
+const STEAM_CODE_ALPHABET = "23456789BCDFGHJKMNPQRTVWXY";
 
 class ApiError extends Error {
   constructor(status, message, headers = {}) {
@@ -211,6 +224,232 @@ function validateSavedProfileEncrypted(value) {
     iv: validateBase64Url(value.iv, "encrypted.iv", 16, 16),
     ciphertext: validateBase64Url(value.ciphertext, "encrypted.ciphertext", 24, 160),
   };
+}
+
+function normalizeAccessCode(value) {
+  return String(value ?? "").trim();
+}
+
+function isPrimaryCode(value) {
+  const code = normalizeAccessCode(value);
+  return code.length === PRIMARY_CODE_LENGTH && [...code].every((char) => PRIMARY_ALPHABET.includes(char));
+}
+
+function validateAliasCode(value) {
+  const alias = normalizeAccessCode(value);
+
+  if (alias.length < ALIAS_MIN_LENGTH || alias.length > ALIAS_MAX_LENGTH) {
+    throw new ApiError(400, `Поле accessCode должно быть основным ID из ${PRIMARY_CODE_LENGTH} символов или alias длиной от ${ALIAS_MIN_LENGTH} до ${ALIAS_MAX_LENGTH} символов.`);
+  }
+
+  if (!/^[A-Za-z0-9._~!@#$%^&*+=?\-]+$/.test(alias)) {
+    throw new ApiError(400, "Поле accessCode содержит недопустимые символы.");
+  }
+
+  return alias;
+}
+
+function validateUnsafeAccessCode(value) {
+  const code = normalizeAccessCode(value);
+  return isPrimaryCode(code) ? code : validateAliasCode(code);
+}
+
+function fromBase64Url(value, fieldName = "base64url") {
+  if (typeof value !== "string" || !BASE64URL_PATTERN.test(value)) {
+    throw new ApiError(400, `Поле ${fieldName} имеет некорректный base64url-формат.`);
+  }
+
+  const padded = value.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (value.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+function decodeSteamSharedSecret(sharedSecret) {
+  if (typeof sharedSecret !== "string") {
+    throw new ApiError(500, "Расшифрованный shared_secret имеет некорректный формат.");
+  }
+
+  const compact = sharedSecret.replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/");
+  if (!compact || !/^[A-Za-z0-9+/]*={0,2}$/.test(compact)) {
+    throw new ApiError(500, "Расшифрованный shared_secret повреждён.");
+  }
+
+  const withoutPadding = compact.replace(/=+$/g, "");
+  const padded = withoutPadding + "=".repeat((4 - (withoutPadding.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  if (bytes.length < 16 || bytes.length > 128) {
+    bytes.fill(0);
+    throw new ApiError(500, "Расшифрованный shared_secret имеет некорректную длину.");
+  }
+
+  return bytes;
+}
+
+async function importAesKey(rawKey, usages) {
+  return crypto.subtle.importKey("raw", rawKey, { name: "AES-GCM" }, false, usages);
+}
+
+async function deriveAccessRoot(code) {
+  const material = await crypto.subtle.importKey(
+    "raw",
+    TEXT_ENCODER.encode(normalizeAccessCode(code)),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"],
+  );
+
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      hash: "SHA-256",
+      salt: ROOT_KDF_SALT,
+      iterations: ROOT_KDF_ITERATIONS,
+    },
+    material,
+    256,
+  );
+
+  return new Uint8Array(bits);
+}
+
+async function tokenFromRoot(rootKeyBytes) {
+  const hmacKey = await crypto.subtle.importKey(
+    "raw",
+    rootKeyBytes,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", hmacKey, LOOKUP_CONTEXT);
+  return toBase64Url(signature);
+}
+
+async function deriveWrapKey(rootKeyBytes, salt, usages) {
+  const hkdfKey = await crypto.subtle.importKey("raw", rootKeyBytes, { name: "HKDF" }, false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt,
+      info: WRAP_INFO,
+    },
+    hkdfKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    usages,
+  );
+}
+
+async function unwrapUnsafeDataKey(wrap, rootKeyBytes) {
+  const validatedWrap = validateWrap(wrap);
+  const salt = fromBase64Url(validatedWrap.salt, "wrap.salt");
+  const iv = fromBase64Url(validatedWrap.iv, "wrap.iv");
+  const ciphertext = fromBase64Url(validatedWrap.ciphertext, "wrap.ciphertext");
+
+  if (salt.length !== 16 || iv.length !== 12 || ciphertext.length !== 48) {
+    throw new ApiError(400, "Повреждены параметры зашифрованного ключа.");
+  }
+
+  const wrapKey = await deriveWrapKey(rootKeyBytes, salt, ["decrypt"]);
+  let plaintext;
+  try {
+    plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv, additionalData: WRAP_AAD, tagLength: 128 },
+      wrapKey,
+      ciphertext,
+    );
+  } catch {
+    throw new ApiError(403, "UNSAFE endpoint не смог расшифровать data key. Проверьте accessCode.");
+  }
+
+  const dataKey = new Uint8Array(plaintext);
+  if (dataKey.length !== 32) {
+    dataKey.fill(0);
+    throw new ApiError(500, "Расшифрованный data key имеет некорректную длину.");
+  }
+  return dataKey;
+}
+
+async function decryptUnsafePayload(payload, dataKeyBytes) {
+  const validatedPayload = validatePayload(payload);
+  const iv = fromBase64Url(validatedPayload.iv, "payload.iv");
+  const ciphertext = fromBase64Url(validatedPayload.ciphertext, "payload.ciphertext");
+  if (iv.length !== 12 || ciphertext.length < 17 || ciphertext.length > 12_000) {
+    throw new ApiError(400, "Зашифрованный payload повреждён.");
+  }
+
+  const aesKey = await importAesKey(dataKeyBytes, ["decrypt"]);
+  let plaintext;
+  try {
+    plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv, additionalData: PAYLOAD_AAD, tagLength: 128 },
+      aesKey,
+      ciphertext,
+    );
+  } catch {
+    throw new ApiError(403, "UNSAFE endpoint не смог расшифровать payload.");
+  }
+
+  try {
+    return JSON.parse(TEXT_DECODER.decode(plaintext));
+  } catch {
+    throw new ApiError(500, "Расшифрованный payload имеет некорректный формат.");
+  }
+}
+
+function steamCodeWindow(timestampMs = Date.now()) {
+  const seconds = timestampMs / 1000;
+  const position = ((seconds % 30) + 30) % 30;
+  const remainingPrecise = 30 - position;
+  return {
+    step: Math.floor(seconds / 30),
+    secondsRemaining: Math.max(1, Math.ceil(remainingPrecise)),
+    remainingFraction: Math.min(1, Math.max(0, remainingPrecise / 30)),
+  };
+}
+
+async function generateSteamGuardCode(sharedSecret, timestampMs = Date.now()) {
+  const secretBytes = decodeSteamSharedSecret(sharedSecret);
+  const unixSeconds = Math.floor(timestampMs / 1000);
+  const counter = Math.floor(unixSeconds / 30);
+  const counterBytes = new Uint8Array(8);
+  const view = new DataView(counterBytes.buffer);
+  view.setUint32(0, Math.floor(counter / 0x1_0000_0000), false);
+  view.setUint32(4, counter >>> 0, false);
+
+  const hmacKey = await crypto.subtle.importKey(
+    "raw",
+    secretBytes,
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"],
+  );
+  secretBytes.fill(0);
+
+  const digest = new Uint8Array(await crypto.subtle.sign("HMAC", hmacKey, counterBytes));
+  const offset = digest[19] & 0x0f;
+  let fullCode =
+    (digest[offset] & 0x7f) * 0x1_000000 +
+    digest[offset + 1] * 0x1_0000 +
+    digest[offset + 2] * 0x100 +
+    digest[offset + 3];
+
+  let code = "";
+  for (let index = 0; index < 5; index += 1) {
+    code += STEAM_CODE_ALPHABET[fullCode % STEAM_CODE_ALPHABET.length];
+    fullCode = Math.floor(fullCode / STEAM_CODE_ALPHABET.length);
+  }
+  digest.fill(0);
+  return code;
 }
 
 function accessKey(token) {
@@ -410,6 +649,54 @@ async function handleUpdatePayload(context) {
   await Promise.all(writes);
 
   return jsonResponse({ ok: true, updated: true, updatedAt: now });
+}
+
+async function handleUnsafeCode(context) {
+  await enforceRateLimit(context.env, context.request, "unsafe-code", 10);
+  const body = await readJson(context.request);
+  const accessCode = validateUnsafeAccessCode(body.accessCode);
+  let rootKey;
+  let dataKey;
+
+  try {
+    rootKey = await deriveAccessRoot(accessCode);
+    const token = await tokenFromRoot(rootKey);
+    const entry = await getJson(context.env.SDA_KV, accessKey(token));
+
+    if (!entry || entry.v !== 1 || (entry.kind !== "primary" && entry.kind !== "alias")) {
+      throw new ApiError(404, "Хранилище не найдено. Проверьте accessCode.");
+    }
+
+    const record = await getJson(context.env.SDA_KV, recordKey(entry.recordId));
+    if (!record || record.v !== 1) {
+      throw new ApiError(503, "Запись ещё реплицируется или была удалена. Повторите попытку чуть позже.");
+    }
+
+    dataKey = await unwrapUnsafeDataKey(entry.wrap, rootKey);
+    const payload = await decryptUnsafePayload(record.payload, dataKey);
+    if (!payload || payload.v !== 1 || typeof payload.sharedSecret !== "string") {
+      throw new ApiError(500, "Расшифрованный vault не содержит shared_secret.");
+    }
+
+    const nowMs = Date.now();
+    const windowState = steamCodeWindow(nowMs);
+    const code = await generateSteamGuardCode(payload.sharedSecret, nowMs);
+    return jsonResponse({
+      ok: true,
+      unsafe: true,
+      code,
+      secondsRemaining: windowState.secondsRemaining,
+      remainingFraction: windowState.remainingFraction,
+      step: windowState.step,
+      validUntil: new Date((windowState.step + 1) * 30_000).toISOString(),
+      kind: entry.kind,
+      recordId: entry.recordId,
+      label: typeof payload.label === "string" ? payload.label.slice(0, 80) : null,
+    });
+  } finally {
+    if (rootKey instanceof Uint8Array) rootKey.fill(0);
+    if (dataKey instanceof Uint8Array) dataKey.fill(0);
+  }
 }
 
 async function requirePrimaryRecord(env, primaryToken) {
@@ -668,6 +955,8 @@ async function routeRequest(context) {
       return handleLookup(context);
     case "update-payload":
       return handleUpdatePayload(context);
+    case "unsafe-code":
+      return handleUnsafeCode(context);
     case "alias":
       return handleAlias(context);
     case "delete":
