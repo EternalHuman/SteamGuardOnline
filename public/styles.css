@@ -1,3 +1,43 @@
+@font-face {
+  font-family: "Onest";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/Onest-400.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Onest";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/Onest-500.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Onest";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/Onest-600.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Onest";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/Onest-700.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Onest";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./fonts/Onest-800.ttf") format("truetype");
+}
+
 :root {
   color-scheme: dark;
   --bg: #080c12;
@@ -24,7 +64,7 @@
   --radius-md: 18px;
   --radius-sm: 13px;
   --page-width: 1180px;
-  --font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font: "Onest", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   --lava-scroll-y: 0px;
   --lava-seed-x-one: 0px;
@@ -156,6 +196,21 @@ code {
 
 [hidden] {
   display: none !important;
+}
+
+.scroll-reveal {
+  opacity: 0;
+  translate: 0 28px;
+  transition:
+    opacity 620ms ease,
+    translate 720ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--scroll-reveal-delay, 0ms);
+  will-change: opacity, translate;
+}
+
+.scroll-reveal.is-scroll-revealed {
+  opacity: 1;
+  translate: 0 0;
 }
 
 ::selection {
@@ -737,6 +792,22 @@ code {
   max-width: 640px;
 }
 
+@keyframes hero-title-slide-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(-86px, 0, 0);
+  }
+
+  58% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -754,6 +825,18 @@ code {
   background: currentColor;
 }
 
+.hero-copy > .eyebrow,
+.hero h1,
+.hero-lead,
+.hero-points > span {
+  animation: hero-title-slide-in 680ms cubic-bezier(0.3, 0.9, 0.2, 1) both;
+  will-change: transform, opacity;
+}
+
+.hero-copy > .eyebrow {
+  animation-delay: 20ms;
+}
+
 .hero h1,
 .section-heading h2,
 .flow-copy h2 {
@@ -762,6 +845,10 @@ code {
   font-weight: 710;
   letter-spacing: -0.055em;
   line-height: 0.98;
+}
+
+.hero h1 {
+  animation-delay: 90ms;
 }
 
 .hero h1 em {
@@ -773,6 +860,7 @@ code {
 .hero-lead {
   max-width: 610px;
   margin: 30px 0 0;
+  animation-delay: 170ms;
   color: var(--muted-strong);
   font-size: 18px;
   line-height: 1.72;
@@ -791,6 +879,18 @@ code {
   gap: 8px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.hero-points > span:nth-child(1) {
+  animation-delay: 240ms;
+}
+
+.hero-points > span:nth-child(2) {
+  animation-delay: 300ms;
+}
+
+.hero-points > span:nth-child(3) {
+  animation-delay: 360ms;
 }
 
 .hero-points i {
@@ -1018,6 +1118,13 @@ code {
   font-size: 13px;
   font-weight: 650;
   transition: color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.mode-tab:not(.is-active):hover,
+.mode-tab:not(.is-active):focus-visible {
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.045);
+  color: var(--muted-strong);
 }
 
 .mode-tab.is-active {
@@ -2664,11 +2771,11 @@ body[data-page="api"] .site-info-panels {
 }
 
 .ring-value {
-  stroke: var(--accent);
+  stroke: var(--countdown-ring-color, var(--green));
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
   stroke-linecap: round;
-  transition: stroke-dashoffset 180ms linear;
+  transition: stroke-dashoffset 180ms linear, stroke 220ms linear;
 }
 
 .countdown > div {
@@ -2791,10 +2898,13 @@ body[data-page="api"] .site-info-panels {
   color: var(--red);
 }
 
-.benefits,
 .how-it-works,
 .faq {
   padding-block: 110px;
+}
+
+.benefits {
+  padding-block: 110px 46px;
 }
 
 .section-heading {
@@ -3013,6 +3123,16 @@ body[data-page="api"] .site-info-panels {
   border-radius: var(--radius-lg);
   background: linear-gradient(160deg, rgba(20, 28, 40, 0.78), rgba(11, 17, 25, 0.86));
   transition: border-color 180ms ease, transform 180ms ease, background 180ms ease;
+}
+
+.benefit-card.scroll-reveal {
+  translate: 0 0;
+  transition:
+    opacity 640ms ease,
+    border-color 180ms ease,
+    transform 180ms ease,
+    background 180ms ease;
+  transition-delay: var(--scroll-reveal-delay, 0ms), 0ms, 0ms, 0ms;
 }
 
 .benefit-card:hover {
@@ -3333,7 +3453,7 @@ body[data-page="api"] .site-info-panels {
   align-items: flex-end;
   justify-content: space-between;
   gap: 30px;
-  padding-block: 36px 42px;
+  padding-block: 28px 34px;
   border-top: 1px solid var(--line);
 }
 
@@ -3622,10 +3742,13 @@ body[data-page="api"] .site-info-panels {
     border-left: 0;
   }
 
-  .benefits,
   .how-it-works,
   .faq {
     padding-block: 80px;
+  }
+
+  .benefits {
+    padding-block: 80px 38px;
   }
 
   .benefit-grid {

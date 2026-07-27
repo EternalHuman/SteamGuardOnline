@@ -25,6 +25,11 @@ const elements = {
   pageGlows: [...document.querySelectorAll(".page-glow")],
   languageSelect: document.querySelector("#language-select"),
   homeSections: [...document.querySelectorAll("[data-home-section]")],
+  scrollRevealItems: [
+    ...document.querySelectorAll(
+      ".app-card, .auth-card, .manage-card, .benefits .section-heading, .benefit-card, .flow-details-panel, .max-security-note",
+    ),
+  ],
   accountsMenu: document.querySelector("#accounts-menu"),
   accountsMenuButton: document.querySelector("#accounts-menu-button"),
   accountsDropdown: document.querySelector(".accounts-dropdown"),
@@ -117,6 +122,7 @@ const LANGUAGE_STORAGE_KEY = "sda-vault-language";
 const PROFILE_STORAGE_KEY = "sgo_saved_profiles_v1";
 const PROFILE_COOKIE_NAME = "sgo_saved_profiles_v1";
 const LAST_PROFILE_COOKIE_NAME = "sgo_last_profile_v1";
+const LAST_PROFILE_RESTORE_BLOCK_KEY = "sgo_last_profile_restore_blocked_v1";
 const PROFILE_COOKIE_CHUNK_PREFIX = `${PROFILE_COOKIE_NAME}_chunk_`;
 const PROFILE_COOKIE_CHUNK_COUNT_NAME = `${PROFILE_COOKIE_NAME}_chunk_count`;
 const PROFILE_COOKIE_EXPIRES = "Fri, 31 Dec 9999 23:59:59 GMT";
@@ -140,6 +146,11 @@ const AUTH_PANEL_SCROLL_TOP_FALLBACK_OFFSET = 18;
 const AUTH_PANEL_SCROLL_HIGHLIGHT_MS = 2000;
 const VAULT_MODE_FADE_OUT_MS = 120;
 const VAULT_MODE_ANIMATION_MS = 380;
+const COUNTDOWN_RING_COLORS = {
+  red: [255, 115, 115],
+  yellow: [242, 201, 109],
+  green: [98, 217, 165],
+};
 const FIXED_DEPLOY_URL = "https://4391187a.steamguardonline.pages.dev";
 const FIXED_DEPLOY_HOST_PATTERN = /^(?=.*\d)[a-z0-9]{7,}\.steamguardonline\.pages\.dev$/i;
 const GITHUB_COMMIT_PATTERN = /^[a-f0-9]{40}$/i;
@@ -1528,6 +1539,10 @@ function readProfileNoteHiddenPreference() {
 let currentLanguage = DEFAULT_LANGUAGE;
 const initialProfileNoteHiddenPreference = readProfileNoteHiddenPreference();
 
+if ("scrollRestoration" in window.history) {
+  window.history.scrollRestoration = "manual";
+}
+
 const state = {
   selectedFiles: [],
   dataKey: null,
@@ -1537,6 +1552,7 @@ const state = {
   activeAccessToken: null,
   activeSavedProfileId: null,
   pendingSavedProfileId: null,
+  pendingAccessScroll: true,
   accessKind: null,
   hasAlias: false,
   timerId: null,
@@ -1633,6 +1649,81 @@ function setupLavaBackground() {
   updateParallax();
   window.addEventListener("scroll", scheduleParallax, { passive: true });
   window.addEventListener("resize", scheduleParallax, { passive: true });
+}
+
+function revealScrollItem(element) {
+  element?.classList.add("is-scroll-revealed");
+}
+
+function revealScrollItemsWithin(container) {
+  if (!container) return;
+
+  const items = [
+    ...(container.matches?.(".scroll-reveal") ? [container] : []),
+    ...container.querySelectorAll(".scroll-reveal"),
+  ];
+  if (items.length === 0) return;
+
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+    for (const item of items) revealScrollItem(item);
+    return;
+  }
+
+  for (const item of items) item.classList.remove("is-scroll-revealed");
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      for (const item of items) revealScrollItem(item);
+    });
+  });
+}
+
+function setupScrollReveal() {
+  if (elements.scrollRevealItems.length === 0) return;
+
+  const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+    for (const item of elements.scrollRevealItems) {
+      item.classList.add("scroll-reveal", "is-scroll-revealed");
+    }
+    return;
+  }
+
+  const revealWhenIntersecting = (entries, activeObserver) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      revealScrollItem(entry.target);
+      activeObserver.unobserve(entry.target);
+    }
+  };
+
+  const observer = new IntersectionObserver(
+    revealWhenIntersecting,
+    {
+      rootMargin: "0px 0px -8% 0px",
+      threshold: 0.12,
+    },
+  );
+
+  const earlyObserver = new IntersectionObserver(
+    revealWhenIntersecting,
+    {
+      rootMargin: "0px 0px 24% 0px",
+      threshold: 0.01,
+    },
+  );
+
+  const benefitCards = [...document.querySelectorAll(".benefit-card")];
+  elements.scrollRevealItems.forEach((item, index) => {
+    item.classList.add("scroll-reveal");
+    const benefitIndex = benefitCards.indexOf(item);
+    const delay = benefitIndex === -1 ? Math.min(index * 45, 180) : benefitIndex * 85;
+    item.style.setProperty("--scroll-reveal-delay", `${delay}ms`);
+    if (item.classList.contains("max-security-note")) {
+      earlyObserver.observe(item);
+    } else {
+      observer.observe(item);
+    }
+  });
 }
 
 function resolveSupportedLanguage(language) {
@@ -2250,7 +2341,15 @@ function readCookie(name) {
 }
 
 function expireCookie(name) {
-  document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax${cookieSecureAttribute()}`;
+  const expiredCookie = `${name}=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${cookieSecureAttribute()}`;
+  document.cookie = `${expiredCookie}; Path=/`;
+
+  const hostname = window.location.hostname;
+  const canUseDomain = hostname && hostname.includes(".") && !/^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname);
+  if (!canUseDomain) return;
+
+  document.cookie = `${expiredCookie}; Path=/; Domain=${hostname}`;
+  document.cookie = `${expiredCookie}; Path=/; Domain=.${hostname}`;
 }
 
 function readLastSelectedProfileId() {
@@ -2260,7 +2359,28 @@ function readLastSelectedProfileId() {
 
 function saveLastSelectedProfileId(profileId) {
   if (!validateSavedProfileId(profileId)) return;
+  setLastSelectedProfileRestoreBlocked(false);
   document.cookie = `${LAST_PROFILE_COOKIE_NAME}=${profileId}; ${profileCookieAttributes()}`;
+}
+
+function setLastSelectedProfileRestoreBlocked(blocked) {
+  try {
+    if (blocked) {
+      sessionStorage.setItem(LAST_PROFILE_RESTORE_BLOCK_KEY, "1");
+    } else {
+      sessionStorage.removeItem(LAST_PROFILE_RESTORE_BLOCK_KEY);
+    }
+  } catch {
+    // Session restore blocking is best-effort.
+  }
+}
+
+function isLastSelectedProfileRestoreBlocked() {
+  try {
+    return sessionStorage.getItem(LAST_PROFILE_RESTORE_BLOCK_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 function saveLastSelectedProfile(profile) {
@@ -2906,7 +3026,14 @@ function findLastSelectedSavedProfileIndex() {
 }
 
 function restoreLastSelectedSavedProfile() {
-  if (state.currentInfoPage || getAccessCodeFromUrl() || state.savedProfiles.length === 0) return false;
+  if (
+    state.currentInfoPage ||
+    getAccessCodeFromUrl() ||
+    isLastSelectedProfileRestoreBlocked() ||
+    state.savedProfiles.length === 0
+  ) {
+    return false;
+  }
 
   const index = findLastSelectedSavedProfileIndex();
   if (index === -1) return false;
@@ -2919,12 +3046,12 @@ function restoreLastSelectedSavedProfile() {
 
   if (profile.p !== 0) {
     setAccountsMenuOpen(true, "click");
-    showSavedProfilePinPanel(index);
+    showSavedProfilePinPanel(index, { focus: false });
     return true;
   }
 
   hideSavedProfilePinPanel();
-  openSavedProfile(index, "");
+  openSavedProfile(index, "", { scroll: false });
   return true;
 }
 
@@ -2961,10 +3088,10 @@ function updateSavedProfilePinPanel({ focus = false, clearValue = false } = {}) 
   if (focus) elements.savedProfilePin.focus();
 }
 
-function showSavedProfilePinPanel(index, { clearStatus = true } = {}) {
+function showSavedProfilePinPanel(index, { clearStatus = true, focus = true } = {}) {
   state.pendingSavedProfilePinIndex = index;
   if (clearStatus) setStatus(elements.savedProfileStatus);
-  updateSavedProfilePinPanel({ focus: true, clearValue: true });
+  updateSavedProfilePinPanel({ focus, clearValue: true });
 }
 
 async function submitSavedProfilePin() {
@@ -3139,7 +3266,7 @@ function handleSavedProfilePinFailure(index, error) {
   setStatus(elements.savedProfileStatus, error?.message || t("profiles.pinWrong"), "error");
 }
 
-async function openSavedProfile(index, pin) {
+async function openSavedProfile(index, pin, { scroll = true } = {}) {
   const profile = state.savedProfiles[index];
   if (!profile) return;
 
@@ -3172,6 +3299,7 @@ async function openSavedProfile(index, pin) {
     hideSavedProfilePinPanel();
     elements.accessCode.value = accessCode;
     state.pendingSavedProfileId = profile.id;
+    state.pendingAccessScroll = scroll;
     if (typeof elements.accessForm.requestSubmit === "function") {
       elements.accessForm.requestSubmit();
     } else {
@@ -3414,6 +3542,7 @@ function toggleFlowDetails() {
   elements.flowDetailsPanel.hidden = !nextExpanded;
 
   if (nextExpanded) {
+    revealScrollItemsWithin(elements.flowDetailsPanel);
     elements.flowDetailsPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 }
@@ -3847,10 +3976,29 @@ function clearActiveVault({ hide = true } = {}) {
   setStatus(elements.profileNoteStatus);
   elements.countdownValue.textContent = "-";
   elements.countdownCircle.style.strokeDashoffset = "100";
+  elements.countdownCircle.style.removeProperty("--countdown-ring-color");
   if (hide) {
     clearAuthPanelScrollHighlight();
     elements.authPanel.hidden = true;
   }
+}
+
+function clampUnit(value) {
+  return Math.min(1, Math.max(0, Number(value) || 0));
+}
+
+function mixRgbColor(from, to, amount) {
+  const ratio = clampUnit(amount);
+  const channels = from.map((channel, index) => Math.round(channel + (to[index] - channel) * ratio));
+  return `rgb(${channels.join(", ")})`;
+}
+
+function countdownRingColor(remainingFraction) {
+  const fraction = clampUnit(remainingFraction);
+  if (fraction >= 0.5) {
+    return mixRgbColor(COUNTDOWN_RING_COLORS.yellow, COUNTDOWN_RING_COLORS.green, (fraction - 0.5) * 2);
+  }
+  return mixRgbColor(COUNTDOWN_RING_COLORS.red, COUNTDOWN_RING_COLORS.yellow, fraction * 2);
 }
 
 async function updateGuardCode() {
@@ -3859,6 +4007,7 @@ async function updateGuardCode() {
 
   elements.countdownValue.textContent = t("auth.seconds", { count: windowState.secondsRemaining });
   elements.countdownCircle.style.strokeDashoffset = String(100 * (1 - windowState.remainingFraction));
+  elements.countdownCircle.style.setProperty("--countdown-ring-color", countdownRingColor(windowState.remainingFraction));
 
   if (state.currentStep === windowState.step || state.pendingStep === windowState.step) return;
   state.pendingStep = windowState.step;
@@ -3947,6 +4096,7 @@ function activateVault({
   elements.manageAliasOnly.hidden = kind === "primary";
   elements.removeAlias.hidden = !(kind === "primary" && state.hasAlias);
   elements.authPanel.hidden = false;
+  revealScrollItemsWithin(elements.authPanel);
   elements.aliasForm.reset();
   setStatus(elements.aliasStatus);
 
@@ -4070,7 +4220,9 @@ async function handleAccessSubmit(event) {
 
   const accessCode = validation.value;
   let savedProfileId = state.pendingSavedProfileId;
+  const shouldScrollToAuth = state.pendingAccessScroll !== false;
   state.pendingSavedProfileId = null;
+  state.pendingAccessScroll = true;
 
   setBusy(elements.accessSubmit, true, "busy.decrypting");
   let prepared;
@@ -4112,6 +4264,7 @@ async function handleAccessSubmit(event) {
       accessCode,
       accessToken: prepared.token,
       savedProfileId,
+      scroll: shouldScrollToAuth,
     });
     dataKey = null;
     elements.accessCode.value = "";
@@ -4561,6 +4714,8 @@ elements.copyGuard.addEventListener("click", () => {
   if (/^[A-Z0-9]{5}$/.test(code)) copyText(code, t("copy.guard"));
 });
 elements.logoutButton.addEventListener("click", () => {
+  setLastSelectedProfileRestoreBlocked(true);
+  clearLastSelectedProfileId();
   clearActiveVault();
   setStatus(elements.accessStatus, t("auth.logoutSuccess"), "success");
 });
@@ -4578,6 +4733,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 setupLavaBackground();
+setupScrollReveal();
 currentLanguage = getInitialLanguage();
 mountSavedProfilesMenu();
 state.savedProfiles = loadSavedProfilesFromStorage();
