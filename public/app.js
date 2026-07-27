@@ -2205,6 +2205,14 @@ function saveLastSelectedProfileId(profileId) {
   document.cookie = `${LAST_PROFILE_COOKIE_NAME}=${profileId}; ${profileCookieAttributes()}`;
 }
 
+function saveLastSelectedProfile(profile) {
+  if (!profile || profile.p !== 0) {
+    if (validateSavedProfileId(profile?.id)) clearLastSelectedProfileId(profile.id);
+    return;
+  }
+  saveLastSelectedProfileId(profile.id);
+}
+
 function clearLastSelectedProfileId(profileId = "") {
   if (profileId && readLastSelectedProfileId() !== profileId) return;
   expireCookie(LAST_PROFILE_COOKIE_NAME);
@@ -2749,8 +2757,6 @@ function updateSavedProfilePinPanel({ focus = false, clearValue = false } = {}) 
 }
 
 function showSavedProfilePinPanel(index, { clearStatus = true } = {}) {
-  const profile = state.savedProfiles[index];
-  if (profile) saveLastSelectedProfileId(profile.id);
   state.pendingSavedProfilePinIndex = index;
   if (clearStatus) setStatus(elements.savedProfileStatus);
   updateSavedProfilePinPanel({ focus: true, clearValue: true });
@@ -3702,7 +3708,7 @@ function activateVault({
   state.activeAccessCode = accessCode;
   state.activeAccessToken = accessToken;
   state.activeSavedProfileId = savedProfileId;
-  if (savedProfileId) saveLastSelectedProfileId(savedProfileId);
+  if (savedProfileId) saveLastSelectedProfile(state.savedProfiles.find((profile) => profile.id === savedProfileId));
   updateSavedProfileActiveState();
   state.hasAlias = Boolean(hasAlias);
 
@@ -4116,11 +4122,12 @@ elements.savedProfileList.addEventListener("click", (event) => {
   if (button.dataset.profileAction === "open") {
     const profile = state.savedProfiles[index];
     if (!profile) return;
-    saveLastSelectedProfileId(profile.id);
     if (profile.p !== 0) {
+      clearLastSelectedProfileId(profile.id);
       showSavedProfilePinPanel(index);
       return;
     }
+    saveLastSelectedProfile(profile);
     hideSavedProfilePinPanel();
     openSavedProfile(index, "");
     return;
