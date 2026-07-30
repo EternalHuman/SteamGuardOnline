@@ -39,6 +39,19 @@ class FakeKV {
   async delete(key) {
     this.values.delete(key);
   }
+
+  async list({ prefix = "", cursor = "", limit = 1000 } = {}) {
+    const offset = Number(cursor || 0);
+    const names = [...this.values.keys()].filter((key) => key.startsWith(prefix)).sort();
+    const pageNames = names.slice(offset, offset + limit);
+    const nextOffset = offset + pageNames.length;
+    const listComplete = nextOffset >= names.length;
+    return {
+      keys: pageNames.map((name) => ({ name })),
+      list_complete: listComplete,
+      cursor: listComplete ? undefined : String(nextOffset),
+    };
+  }
 }
 
 function token(character) {
@@ -320,6 +333,46 @@ test("saved profile PIN failures are counted in KV and delete the vault", async 
 
   const openAfterDelete = await call(kv, "/api/open-saved", { id: profileId, verifier });
   assert.equal(openAfterDelete.status, 404);
+});
+
+test("stats endpoint reports profile count and latest creation timestamps with rate limiting", async () => {
+  const kv = new FakeKV();
+  const timestamps = [
+    "2026-07-30T08:00:00.000Z",
+    "2026-07-30T08:01:00.000Z",
+    "2026-07-30T08:02:00.000Z",
+    "2026-07-30T08:03:00.000Z",
+    "2026-07-30T08:04:00.000Z",
+    "2026-07-30T08:05:00.000Z",
+  ];
+
+  for (const [index, createdAt] of timestamps.entries()) {
+    await kv.put(
+      `record:${String(index).padStart(2, "0")}`,
+      JSON.stringify({
+        v: 1,
+        payload: payload("S"),
+        primaryToken: token(String(index)),
+        aliasToken: null,
+        createdAt,
+        updatedAt: createdAt,
+      }),
+    );
+  }
+  await kv.put("access:not-counted", JSON.stringify({ v: 1, createdAt: "2099-01-01T00:00:00.000Z" }));
+  await kv.put("saved-profile:not-counted", JSON.stringify({ v: 1, createdAt: "2099-01-01T00:00:00.000Z" }));
+
+  const response = await call(kv, "/api/stats", null, "GET");
+  assert.equal(response.status, 200);
+  const data = await response.json();
+  assert.equal(data.ok, true);
+  assert.equal(data.profileCount, 6);
+  assert.deepEqual(data.latestProfileCreatedAt, timestamps.slice(1).reverse());
+  assert.match(data.generatedAt, /^\d{4}-\d{2}-\d{2}T/);
+
+  const limited = await call(kv, "/api/stats", null, "GET");
+  assert.equal(limited.status, 429);
+  assert.equal(limited.headers.get("retry-after"), "60");
 });
 
 test("health endpoint reports readiness", async () => {

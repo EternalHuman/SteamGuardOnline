@@ -20,6 +20,9 @@ const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/;
 const MAX_REQUEST_BYTES = 24_000;
 const IMPORT_RATE_LIMIT = 50;
 const SAVE_SAVED_PROFILE_RATE_LIMIT = 50;
+const STATS_RATE_LIMIT = 1;
+const STATS_RECENT_LIMIT = 5;
+const KV_LIST_LIMIT = 1000;
 const SAVED_PROFILE_MAX_PIN_ATTEMPTS = 5;
 const DEFAULT_FIXED_DEPLOY_URL = "https://4391187a.steamguardonline.pages.dev";
 const FIXED_DEPLOY_HOST_PATTERN = /^(?=.*\d)[a-z0-9]{7,}\.steamguardonline\.pages\.dev$/i;
@@ -508,6 +511,70 @@ async function putJson(kv, key, value, options) {
   }
 }
 
+function validIsoTimestamp(value) {
+  if (typeof value !== "string") return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? { value, timestamp } : null;
+}
+
+async function getRecordCreatedAt(kv, key) {
+  const raw = await kv.get(key);
+  if (raw === null) return null;
+
+  try {
+    const record = JSON.parse(raw);
+    if (!record || record.v !== 1) return null;
+    return validIsoTimestamp(record.createdAt);
+  } catch {
+    return null;
+  }
+}
+
+async function handleStats(context) {
+  await enforceRateLimit(context.env, context.request, "stats", STATS_RATE_LIMIT);
+
+  if (typeof context.env.SDA_KV.list !== "function") {
+    throw new ApiError(503, "KV list API is not available.");
+  }
+
+  let cursor;
+  let profileCount = 0;
+  const latestProfileCreatedAt = [];
+
+  do {
+    const page = await context.env.SDA_KV.list({
+      prefix: "record:",
+      limit: KV_LIST_LIMIT,
+      cursor,
+    });
+    const keys = Array.isArray(page?.keys) ? page.keys : [];
+    profileCount += keys.length;
+
+    const pageTimestamps = await Promise.all(
+      keys
+        .map((key) => key?.name)
+        .filter((key) => typeof key === "string")
+        .map((key) => getRecordCreatedAt(context.env.SDA_KV, key)),
+    );
+
+    for (const timestamp of pageTimestamps) {
+      if (timestamp) latestProfileCreatedAt.push(timestamp);
+    }
+
+    cursor = page?.cursor;
+    if (page?.list_complete !== false) break;
+  } while (cursor);
+
+  latestProfileCreatedAt.sort((left, right) => right.timestamp - left.timestamp);
+
+  return jsonResponse({
+    ok: true,
+    profileCount,
+    latestProfileCreatedAt: latestProfileCreatedAt.slice(0, STATS_RECENT_LIMIT).map((item) => item.value),
+    generatedAt: new Date().toISOString(),
+  });
+}
+
 async function enforceRateLimit(env, request, scope, limit) {
   const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "unknown";
   const minute = Math.floor(Date.now() / 60_000);
@@ -940,6 +1007,10 @@ async function routeRequest(context) {
 
   if (request.method === "GET" && route === "health") {
     return jsonResponse({ ok: true, service: "sda-cloudflare-pages", version: 1 });
+  }
+
+  if (request.method === "GET" && route === "stats") {
+    return handleStats(context);
   }
 
   if (request.method !== "POST") {
